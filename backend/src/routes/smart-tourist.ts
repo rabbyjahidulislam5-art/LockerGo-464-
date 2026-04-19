@@ -792,7 +792,8 @@ function adminDashboard() {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateKey = formatDateLocal(d.toISOString());
-    const count = bookings.filter(b => formatDateLocal(b.createdAt) === dateKey).length;
+    // Filter by auditLogs to show system activity pulse
+    const count = auditLogs.filter(log => formatDateLocal(log.createdAt) === dateKey).length;
     const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const entry = { name: label, value: count };
     pulse.month.push(entry);
