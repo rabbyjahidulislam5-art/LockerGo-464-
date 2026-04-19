@@ -293,24 +293,32 @@ async function loadRows<T>(table: keyof typeof databaseTables): Promise<T[]> {
 }
 
 async function initializeStorage() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS smart_tourist_users (id TEXT PRIMARY KEY, data JSONB NOT NULL);
-    CREATE TABLE IF NOT EXISTS smart_tourist_receptionists (id TEXT PRIMARY KEY, data JSONB NOT NULL);
-    CREATE TABLE IF NOT EXISTS smart_tourist_bookings (id TEXT PRIMARY KEY, data JSONB NOT NULL);
-    CREATE TABLE IF NOT EXISTS smart_tourist_payments (id TEXT PRIMARY KEY, data JSONB NOT NULL);
-    CREATE TABLE IF NOT EXISTS smart_tourist_audit_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
-    CREATE TABLE IF NOT EXISTS smart_tourist_otp_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
-  `);
+  console.log("[STORAGE] Starting storage initialization...");
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS smart_tourist_users (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+      CREATE TABLE IF NOT EXISTS smart_tourist_receptionists (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+      CREATE TABLE IF NOT EXISTS smart_tourist_bookings (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+      CREATE TABLE IF NOT EXISTS smart_tourist_payments (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+      CREATE TABLE IF NOT EXISTS smart_tourist_audit_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+      CREATE TABLE IF NOT EXISTS smart_tourist_otp_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+    `);
+    console.log("[STORAGE] Tables ensured.");
+  } catch (err) {
+    console.error("[STORAGE] Error creating tables:", err);
+  }
 
   // Load standard tables into memory if they exist
   try {
     const dbDestinations = await loadDestinationsFromDb();
+    console.log(`[STORAGE] Loaded ${dbDestinations.length} destinations from DB.`);
     if (dbDestinations.length > 0) {
       destinations.length = 0;
       destinations.push(...dbDestinations);
     }
 
     const dbStations = await loadStationsFromDb();
+    console.log(`[STORAGE] Loaded ${dbStations.length} stations from DB.`);
     if (dbStations.length > 0) {
       // Re-map stations from DB
       const loadedStations = dbStations.map(s => ({
@@ -336,19 +344,22 @@ async function initializeStorage() {
 
       receptionists.length = 0;
       receptionists.push(...defaultReceptionists as any);
+      console.log(`[STORAGE] Generated ${receptionists.length} default receptionists.`);
     }
 
     const dbLockers = await loadLockersFromDb();
+    console.log(`[STORAGE] Loaded ${dbLockers.length} lockers from DB.`);
     if (dbLockers.length > 0) {
       lockers.length = 0;
       lockers.push(...dbLockers as any);
     }
   } catch (err: any) {
-    console.warn("Could not load destinations/stations/lockers from DB, using defaults:", err.message);
+    console.error("[STORAGE] Error loading standard tables:", err.message);
   }
 
   const storedUsers = await loadRows<(typeof users)[number]>("users");
   const storedReceptionists = await loadRows<(typeof receptionists)[number]>("receptionists");
+  console.log(`[STORAGE] Loaded ${storedReceptionists.length} stored receptionists from DB.`);
   const storedBookings = await loadRows<Booking>("bookings");
   const storedPayments = await loadRows<(typeof payments)[number]>("payments");
   const storedAudits = await loadRows<(typeof auditLogs)[number]>("auditLogs");
@@ -373,8 +384,10 @@ async function initializeStorage() {
       if (idx >= 0) receptionists[idx] = { ...receptionists[idx], ...stored };
       else receptionists.push(stored);
     });
+    console.log(`[STORAGE] Memory now has ${receptionists.length} receptionists after merge.`);
   } else {
     // Seed initial receptionists into the DB
+    console.log(`[STORAGE] Seeding ${receptionists.length} initial receptionists to DB.`);
     await Promise.all(receptionists.map((rec) =>
       pool.query(`INSERT INTO smart_tourist_receptionists (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data`, [rec.id, JSON.stringify(rec)]),
     ));
