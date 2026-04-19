@@ -233,7 +233,22 @@ function LoginDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpenCh
         if (data.role === "admin") setLocation("/admin");
       },
       onError: (err: any) => {
-        toast({ title: "Authentication failed", description: err.message || "Invalid credentials", variant: "destructive" });
+        const rawMessage = err.message || "";
+        let friendlyMessage = "Invalid credentials. Please try again.";
+        
+        if (rawMessage.includes("User not found")) {
+          friendlyMessage = "Account not found. Please verify your ID or register first.";
+        } else if (rawMessage.includes("Invalid password") || rawMessage.includes("credentials")) {
+          friendlyMessage = "Incorrect password. Please verify your credentials.";
+        } else if (rawMessage.includes("400") || rawMessage.includes("404")) {
+          friendlyMessage = rawMessage.split(":").pop()?.trim() || "Authentication failed.";
+        }
+
+        toast({ 
+          title: "Authentication Failed", 
+          description: friendlyMessage, 
+          variant: "destructive" 
+        });
       }
     });
   };
@@ -324,7 +339,9 @@ function RegisterDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpe
         setLocation("/user");
       },
       onError: (err: any) => {
-        toast({ title: "Registration failed", description: err.message, variant: "destructive" });
+        const msg = err.message || "";
+        const cleanMsg = msg.includes(":") ? msg.split(":").pop()?.trim() : msg;
+        toast({ title: "Request Failed", description: cleanMsg || "Unable to send OTP. Please try again.", variant: "destructive" });
       }
     });
   };

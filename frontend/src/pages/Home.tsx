@@ -324,7 +324,9 @@ function LockerBookingModal({ station, lockers, open, onOpenChange }: { station:
         toast({ title: "OTP Sent Successfully", description: "Please check your registered email for the code." });
       },
       onError: (err: any) => {
-        toast({ title: "Request Failed", description: err.message, variant: "destructive" });
+        const msg = err.message || "";
+        const cleanMsg = msg.includes(":") ? msg.split(":").pop()?.trim() : msg;
+        toast({ title: "Booking Request Failed", description: cleanMsg || "Unable to process booking. Please try again.", variant: "destructive" });
       }
     });
   };
@@ -339,7 +341,9 @@ function LockerBookingModal({ station, lockers, open, onOpenChange }: { station:
         setLocation("/user");
       },
       onError: (err: any) => {
-        toast({ title: "Verification Error", description: err.message, variant: "destructive" });
+        const msg = err.message || "";
+        const cleanMsg = msg.includes(":") ? msg.split(":").pop()?.trim() : msg;
+        toast({ title: "Verification Failed", description: cleanMsg || "The OTP code is incorrect. Please check your email.", variant: "destructive" });
       }
     });
   };
