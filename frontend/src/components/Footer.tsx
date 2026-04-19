@@ -396,6 +396,16 @@ export function Footer() {
                   </p>
                 </div>
               </div>
+
+              {/* Developers Section */}
+              <div className="pt-3 border-t border-primary/10 mt-2">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 mb-1">Created by</p>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-bold text-muted-foreground/70">Jahidul Islam</p>
+                  <p className="text-[10px] font-bold text-muted-foreground/70">Kazi Saker Hossain</p>
+                  <p className="text-[10px] font-bold text-muted-foreground/70">H.M Tauhid Zaman Shargo</p>
+                </div>
+              </div>
             </div>
             {/* Social placeholders */}
             <div className="flex items-center gap-3 pt-2">
