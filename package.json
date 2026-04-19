@@ -1,0 +1,21 @@
+{
+  "name": "smart-locker-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter \"@workspace/api-server\" --filter \"@workspace/smart-tourist\" --parallel run dev",
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "db:init": "node database/scripts/db-init.js",
+    "db:seed": "node database/scripts/seed-database.mjs",
+    "db:sync": "node database/scripts/sync-review-audits.js"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "@types/pg": "^8.20.0",
+    "pg": "^8.20.0"
+  }
+}

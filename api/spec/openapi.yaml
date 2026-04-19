@@ -1,0 +1,798 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Smart Tourist Locker Management API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: smart-tourist
+    description: Smart Tourist locker operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /smart-tourist/bootstrap:
+    get:
+      operationId: getSmartTouristBootstrap
+      tags: [smart-tourist]
+      summary: Public destinations, station and locker status
+      responses:
+        "200":
+          description: Smart tourist bootstrap data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BootstrapResponse"
+  /smart-tourist/login:
+    post:
+      operationId: smartTouristLogin
+      tags: [smart-tourist]
+      summary: Login as user, receptionist, or admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /smart-tourist/register:
+    post:
+      operationId: smartTouristRegister
+      tags: [smart-tourist]
+      summary: Register a public user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
+      responses:
+        "200":
+          description: Registered user session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /smart-tourist/user/{userId}:
+    get:
+      operationId: getSmartTouristUserDashboard
+      tags: [smart-tourist]
+      summary: User dashboard, active bookings, history and payments
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDashboard"
+    patch:
+      operationId: updateSmartTouristUserProfile
+      tags: [smart-tourist]
+      summary: Update user profile details
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserProfileRequest"
+      responses:
+        "200":
+          description: Updated dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDashboard"
+  /smart-tourist/bookings:
+    post:
+      operationId: createSmartTouristBooking
+      tags: [smart-tourist]
+      summary: Book a locker with duration and check-in time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "200":
+          description: Created booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/bookings/otp/request:
+    post:
+      operationId: requestSmartTouristBookingOtp
+      tags: [smart-tourist]
+      summary: Send an email OTP before confirming a locker booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "200":
+          description: OTP email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingOtpResponse"
+  /smart-tourist/bookings/otp/confirm:
+    post:
+      operationId: confirmSmartTouristBookingOtp
+      tags: [smart-tourist]
+      summary: Verify booking OTP and complete payment plus booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmBookingOtpRequest"
+      responses:
+        "200":
+          description: Booking confirmed after OTP verification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/bookings/{bookingId}/cancel/preview:
+    post:
+      operationId: getSmartTouristCancellationPreview
+      tags: [smart-tourist]
+      summary: Get penalty and refund preview before cancellation
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cancellation preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  penaltyPercent:
+                    type: integer
+                  penaltyAmount:
+                    type: number
+                  refundAmount:
+                    type: number
+                  paidAmount:
+                    type: number
+                  message:
+                    type: string
+                required: [penaltyPercent, penaltyAmount, refundAmount, paidAmount, message]
+  /smart-tourist/bookings/{bookingId}/cancel:
+    post:
+      operationId: cancelSmartTouristBooking
+      tags: [smart-tourist]
+      summary: Cancel a booking and calculate penalty/refund
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingActorRequest"
+      responses:
+        "200":
+          description: Cancel result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/bookings/{bookingId}/extend:
+    post:
+      operationId: extendSmartTouristBooking
+      tags: [smart-tourist]
+      summary: Extend booking time manually
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtendBookingRequest"
+      responses:
+        "200":
+          description: Extension result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/bookings/{bookingId}/key-request:
+    post:
+      operationId: requestSmartTouristKey
+      tags: [smart-tourist]
+      summary: User requests locker key near check-in time
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingActorRequest"
+      responses:
+        "200":
+          description: Key request result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/bookings/{bookingId}/return-key:
+    post:
+      operationId: returnSmartTouristKey
+      tags: [smart-tourist]
+      summary: User submits key return request
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingActorRequest"
+      responses:
+        "200":
+          description: Return request result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/bookings/{bookingId}/pay-due:
+    post:
+      operationId: paySmartTouristDue
+      tags: [smart-tourist]
+      summary: User pays due amount for overtime
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Due payment result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/receptionist/{receptionistId}:
+    get:
+      operationId: getSmartTouristReceptionistDashboard
+      tags: [smart-tourist]
+      summary: Receptionist station dashboard and queue
+      parameters:
+        - name: receptionistId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Receptionist dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceptionistDashboard"
+  /smart-tourist/receptionist/action:
+    post:
+      operationId: smartTouristReceptionistAction
+      tags: [smart-tourist]
+      summary: Receptionist confirms key issue, key receipt, or due payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceptionistActionRequest"
+      responses:
+        "200":
+          description: Action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingActionResponse"
+  /smart-tourist/admin:
+    get:
+      operationId: getSmartTouristAdminDashboard
+      tags: [smart-tourist]
+      summary: Admin monitoring dashboard, audit, bookings and finance
+      responses:
+        "200":
+          description: Admin dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDashboard"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    LockerStatus:
+      type: string
+      enum: [available, booked, processing, occupied, partial]
+    BookingStatus:
+      type: string
+      enum: [pending, key_requested, active, return_requested, completed, cancelled, overdue_due]
+    Role:
+      type: string
+      enum: [public, user, receptionist, admin]
+    Destination:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+      required: [id, name, description]
+    Station:
+      type: object
+      properties:
+        id:
+          type: string
+        destinationId:
+          type: string
+        name:
+          type: string
+        receptionistId:
+          type: string
+        totalLockers:
+          type: integer
+        availableLockers:
+          type: integer
+        bookedLockers:
+          type: integer
+        processingLockers:
+          type: integer
+        address:
+          type: string
+      required: [id, destinationId, name, receptionistId, totalLockers, availableLockers, bookedLockers, processingLockers, address]
+    Locker:
+      type: object
+      properties:
+        id:
+          type: string
+        stationId:
+          type: string
+        number:
+          type: integer
+        status:
+          $ref: "#/components/schemas/LockerStatus"
+        nextAvailableAt:
+          type: string
+          nullable: true
+        partialAvailableHours:
+          type: integer
+          nullable: true
+      required: [id, stationId, number, status, nextAvailableAt, partialAvailableHours]
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        photoUrl:
+          type: string
+      required: [id, name, phone, email, address, photoUrl]
+    ReceptionistProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        stationId:
+          type: string
+        stationName:
+          type: string
+      required: [id, name, email, stationId, stationName]
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+        stationId:
+          type: string
+        stationName:
+          type: string
+        destinationName:
+          type: string
+        lockerId:
+          type: string
+        lockerNumber:
+          type: integer
+        durationHours:
+          type: integer
+        checkInTime:
+          type: string
+        checkOutTime:
+          type: string
+        actualCheckInTime:
+          type: string
+          nullable: true
+        actualCheckOutTime:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/BookingStatus"
+        amount:
+          type: number
+        paidAmount:
+          type: number
+        refundAmount:
+          type: number
+        penaltyPercent:
+          type: integer
+        dueAmount:
+          type: number
+        createdAt:
+          type: string
+      required: [id, userId, userName, stationId, stationName, destinationName, lockerId, lockerNumber, durationHours, checkInTime, checkOutTime, actualCheckInTime, actualCheckOutTime, status, amount, paidAmount, refundAmount, penaltyPercent, dueAmount, createdAt]
+    PaymentRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        bookingId:
+          type: string
+        userId:
+          type: string
+        stationId:
+          type: string
+        type:
+          type: string
+          enum: [booking_payment, refund_40_penalty, refund_80_penalty, due_payment, successful_settlement]
+        amount:
+          type: number
+        reason:
+          type: string
+        createdAt:
+          type: string
+      required: [id, bookingId, userId, stationId, type, amount, reason, createdAt]
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        actorRole:
+          $ref: "#/components/schemas/Role"
+        actorName:
+          type: string
+        actionType:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        previousValue:
+          type: string
+        newValue:
+          type: string
+        stationId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required: [id, actorRole, actorName, actionType, entityType, entityId, previousValue, newValue, stationId, createdAt]
+    SummaryMetric:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: number
+        note:
+          type: string
+      required: [label, value, note]
+    BootstrapResponse:
+      type: object
+      properties:
+        destinations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        stations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Station"
+        lockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Locker"
+        defaultCredentials:
+          type: array
+          items:
+            type: string
+      required: [destinations, stations, lockers, defaultCredentials]
+    LoginRequest:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/Role"
+        identifier:
+          type: string
+        password:
+          type: string
+      required: [role, identifier, password]
+    RegisterUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        photoUrl:
+          type: string
+      required: [name, phone, email, address, photoUrl]
+    LoginResponse:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/Role"
+        user:
+          $ref: "#/components/schemas/UserProfile"
+          nullable: true
+        receptionist:
+          $ref: "#/components/schemas/ReceptionistProfile"
+          nullable: true
+        adminName:
+          type: string
+          nullable: true
+      required: [role, user, receptionist, adminName]
+    CreateBookingRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+        stationId:
+          type: string
+        lockerId:
+          type: string
+        durationHours:
+          type: integer
+        checkInTime:
+          type: string
+      required: [userId, stationId, lockerId, durationHours, checkInTime]
+    BookingPreview:
+      type: object
+      properties:
+        stationName:
+          type: string
+        lockerNumber:
+          type: integer
+        checkInTime:
+          type: string
+        checkOutTime:
+          type: string
+        durationHours:
+          type: integer
+        totalCost:
+          type: number
+      required: [stationName, lockerNumber, checkInTime, checkOutTime, durationHours, totalCost]
+    BookingOtpResponse:
+      type: object
+      properties:
+        otpId:
+          type: string
+        expiresAt:
+          type: string
+        message:
+          type: string
+        preview:
+          $ref: "#/components/schemas/BookingPreview"
+      required: [otpId, expiresAt, message, preview]
+    ConfirmBookingOtpRequest:
+      type: object
+      properties:
+        otpId:
+          type: string
+        otp:
+          type: string
+      required: [otpId, otp]
+    BookingActorRequest:
+      type: object
+      properties:
+        actorId:
+          type: string
+        actorRole:
+          $ref: "#/components/schemas/Role"
+      required: [actorId, actorRole]
+    ExtendBookingRequest:
+      type: object
+      properties:
+        actorId:
+          type: string
+        extraHours:
+          type: integer
+      required: [actorId, extraHours]
+    ReceptionistActionRequest:
+      type: object
+      properties:
+        receptionistId:
+          type: string
+        bookingId:
+          type: string
+        action:
+          type: string
+          enum: [confirm_key_issue, confirm_key_receipt, confirm_due_payment]
+      required: [receptionistId, bookingId, action]
+    UpdateUserProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        photoUrl:
+          type: string
+      required: [name, phone, email, address, photoUrl]
+    BookingActionResponse:
+      type: object
+      properties:
+        booking:
+          $ref: "#/components/schemas/Booking"
+        message:
+          type: string
+        audit:
+          $ref: "#/components/schemas/AuditLog"
+      required: [booking, message, audit]
+    UserDashboard:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        activeBookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentRecord"
+        notifications:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SummaryMetric"
+      required: [user, activeBookings, history, payments, notifications, metrics]
+    ReceptionistDashboard:
+      type: object
+      properties:
+        receptionist:
+          $ref: "#/components/schemas/ReceptionistProfile"
+        station:
+          $ref: "#/components/schemas/Station"
+        lockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Locker"
+        bookingQueue:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentRecord"
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SummaryMetric"
+      required: [receptionist, station, lockers, bookingQueue, payments, metrics]
+    AdminDashboard:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SummaryMetric"
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        receptionists:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReceptionistProfile"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentRecord"
+        auditLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+      required: [metrics, bookings, users, receptionists, payments, auditLogs]

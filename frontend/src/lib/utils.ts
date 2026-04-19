@@ -1,0 +1,47 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { useEffect } from "react"
+import { io } from "socket.io-client"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+const socket = io(import.meta.env.VITE_API_URL || "http://localhost:3001");
+
+export function useRealtime(callback: (data: any) => void) {
+  useEffect(() => {
+    socket.on("DATA_UPDATE", callback);
+    return () => {
+      socket.off("DATA_UPDATE", callback);
+    };
+  }, [callback]);
+}
+
+/**
+ * Returns a strict local date string (YYYY-MM-DD) from an ISO string or Date object.
+ * This avoids the UTC off-by-one issue common with .toISOString().split('T')[0].
+ */
+export function formatDateLocal(dateInput: string | Date | number): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "";
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Returns a strict local month string (YYYY-MM) from an ISO string or Date object.
+ */
+export function formatMonthLocal(dateInput: string | Date | number): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "";
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
