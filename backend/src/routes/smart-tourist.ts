@@ -786,6 +786,19 @@ function adminDashboard() {
     };
   };
 
+  const pulse = { week: [] as any[], month: [] as any[] };
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateKey = formatDateLocal(d.toISOString());
+    const count = bookings.filter(b => formatDateLocal(b.createdAt) === dateKey).length;
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const entry = { name: label, value: count };
+    pulse.month.push(entry);
+    if (i < 7) pulse.week.push(entry);
+  }
+
   return {
     metrics: [
       { label: "Destinations", value: destinations.length, note: "Bangladesh tourist zones" },
@@ -804,6 +817,7 @@ function adminDashboard() {
     receptionists,
     payments: payments.map(enrichPayment),
     auditLogs,
+    pulse,
   };
 }
 

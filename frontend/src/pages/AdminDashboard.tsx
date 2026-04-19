@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
@@ -98,6 +100,8 @@ export default function AdminDashboard() {
   const [bookingLockerIdFilter, setBookingLockerIdFilter] = useState("");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [bookingUserPhoneFilter, setBookingUserPhoneFilter] = useState("");
+  const [pulseFilter, setPulseFilter] = useState<"week" | "month">("month");
+
   const [bookingDayFilter, setBookingDayFilter] = useState("");
   const [bookingMonthFilter, setBookingMonthFilter] = useState("");
   const [bookingStationFilter, setBookingStationFilter] = useState("all");
@@ -430,18 +434,60 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between mb-12">
                       <h3 className="text-3xl font-black tracking-tighter">System Pulse</h3>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="rounded-xl font-black text-[10px] uppercase">Week</Button>
-                        <Button variant="outline" size="sm" className="rounded-xl font-black text-[10px] uppercase bg-white/50">Month</Button>
+                        <Button 
+                          variant={pulseFilter === "week" ? "outline" : "ghost"} 
+                          size="sm" 
+                          className={cn("rounded-xl font-black text-[10px] uppercase", pulseFilter === "week" && "bg-white/50")}
+                          onClick={() => setPulseFilter("week")}
+                        >
+                          Week
+                        </Button>
+                        <Button 
+                          variant={pulseFilter === "month" ? "outline" : "ghost"} 
+                          size="sm" 
+                          className={cn("rounded-xl font-black text-[10px] uppercase", pulseFilter === "month" && "bg-white/50")}
+                          onClick={() => setPulseFilter("month")}
+                        >
+                          Month
+                        </Button>
                       </div>
                     </div>
-                    <div className="h-[400px] w-full bg-gradient-to-b from-primary/5 to-transparent rounded-[2.5rem] border border-dashed border-primary/20 flex items-center justify-center overflow-hidden relative">
-                      <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                        <div className="w-full h-px bg-primary/20" />
-                        <div className="w-full h-px bg-primary/20 rotate-90" />
-                      </div>
-                      <p className="text-muted-foreground font-black uppercase tracking-widest text-xs z-10">High Frequency Waveform</p>
+                    <div className="h-[400px] w-full bg-gradient-to-b from-primary/5 to-transparent rounded-[2.5rem] border border-white/10 overflow-hidden relative p-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={(dashboard as any)?.pulse?.[pulseFilter] || []}>
+                          <defs>
+                            <linearGradient id="pulseGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis 
+                            dataKey="name" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 'bold'}}
+                            minTickGap={30}
+                          />
+                          <YAxis hide />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', fontSize: '12px', color: '#fff' }}
+                            itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 'bold' }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="value" 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth={4}
+                            fillOpacity={1} 
+                            fill="url(#pulseGradient)" 
+                            animationDuration={2000}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
                     </div>
                   </Card>
+
 
                   <Card className="glass-card rounded-[3.5rem] p-12 border-white/20">
                     <div className="flex items-center justify-between mb-12">
