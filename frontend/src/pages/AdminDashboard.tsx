@@ -318,9 +318,17 @@ export default function AdminDashboard() {
     if (paymentTypeFilter !== "all") {
       result = result.filter(log => {
         const actionStr = (log.action || log.actionType || '').toLowerCase().replace(/_/g, ' ').replace(/%/g, '');
-        if (paymentTypeFilter === "80_penalty") {
-          return actionStr.includes("80 penalty") || actionStr.includes("100 penalty") || actionStr.includes("refund");
+        const logContent = (log.newValue || '').toLowerCase();
+        
+        if (paymentTypeFilter === "40_penalty") {
+          return actionStr.includes("40 penalty") || (actionStr.includes("refund") && logContent.includes("40"));
         }
+        
+        if (paymentTypeFilter === "80_penalty") {
+          return actionStr.includes("80 penalty") || actionStr.includes("100 penalty") || 
+                 (actionStr.includes("refund") && (logContent.includes("80") || logContent.includes("100")));
+        }
+        
         const filterStr = paymentTypeFilter.toLowerCase().replace(/_/g, ' ').replace(/%/g, '');
         return actionStr.includes(filterStr);
       });
