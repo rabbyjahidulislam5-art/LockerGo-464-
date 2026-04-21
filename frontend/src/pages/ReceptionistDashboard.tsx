@@ -558,29 +558,78 @@ export default function ReceptionistDashboard() {
                       <div className="text-2xl font-bold text-primary">৳{dashboard.payments.reduce((sum: number, p: any) => sum + p.amount, 0).toFixed(0)}</div>
                     </CardContent>
                   </Card>
-                  {dashboard.metrics.map((m: any) => {
-                    const metricKey = 
-                      m.label === "40% fine total" ? "40%_penalty" :
-                      m.label === "80% / 100% fine total" ? "80%_penalty" :
-                      m.label === "Successful booking total" ? "successful_settlement" :
-                      "due_payment";
+                  {/* Custom render for Fine and Refund metrics */}
+                  {(() => {
+                    const findMetric = (label: string) => dashboard.metrics.find((m: any) => m.label === label);
+                    const fine40 = findMetric("40% fine total");
+                    const refund40 = findMetric("40% refund total");
+                    const fine80 = findMetric("80% / 100% fine total");
+                    const refund80 = findMetric("80% / 100% refund total");
+                    const success = findMetric("Successful booking total");
+                    const due = findMetric("Due collected");
 
                     return (
-                      <Card 
-                        key={m.label} 
-                        className={cn("cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative glass-card rounded-[2rem]", activePaymentTab === metricKey ? "ring-2 ring-primary bg-primary/5 shadow-xl shadow-primary/20 scale-[1.02]" : "")}
-                        onClick={() => setActivePaymentTab(metricKey)}
-                      >
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{m.label}</CardTitle>
-                          <CreditCard className="h-4 w-4 text-muted-foreground/40" />
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                          <div className="text-2xl font-bold">৳{m.value.toFixed(0)}</div>
-                        </CardContent>
-                      </Card>
+                      <>
+                        {/* 40% Group */}
+                        <Card 
+                          className={cn("cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative glass-card rounded-[2rem]", activePaymentTab === "40%_penalty" ? "ring-2 ring-primary bg-primary/5 shadow-xl shadow-primary/20 scale-[1.02]" : "")}
+                          onClick={() => setActivePaymentTab("40%_penalty")}
+                        >
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">40% Penalty & Refund</CardTitle>
+                            <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
+                          </CardHeader>
+                          <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
+                            <div className="text-xl font-bold text-destructive">-৳{fine40?.value.toFixed(0)}</div>
+                            <div className="text-xl font-bold text-primary">+৳{refund40?.value.toFixed(0)}</div>
+                          </CardContent>
+                        </Card>
+
+                        {/* 80/100% Group */}
+                        <Card 
+                          className={cn("cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative glass-card rounded-[2rem]", activePaymentTab === "80%_penalty" ? "ring-2 ring-primary bg-primary/5 shadow-xl shadow-primary/20 scale-[1.02]" : "")}
+                          onClick={() => setActivePaymentTab("80%_penalty")}
+                        >
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">80/100% Penalty & Refund</CardTitle>
+                            <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
+                          </CardHeader>
+                          <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
+                            <div className="text-xl font-bold text-destructive">-৳{fine80?.value.toFixed(0)}</div>
+                            <div className="text-xl font-bold text-primary">+৳{refund80?.value.toFixed(0)}</div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Success Group */}
+                        <Card 
+                          className={cn("cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative glass-card rounded-[2rem]", activePaymentTab === "successful_settlement" ? "ring-2 ring-primary bg-primary/5 shadow-xl shadow-primary/20 scale-[1.02]" : "")}
+                          onClick={() => setActivePaymentTab("successful_settlement")}
+                        >
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Successful Settlements</CardTitle>
+                            <ShieldCheck className="h-4 w-4 text-muted-foreground/40" />
+                          </CardHeader>
+                          <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
+                            <div className="text-2xl font-bold">৳{success?.value.toFixed(0)}</div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Due Group */}
+                        <Card 
+                          className={cn("cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative glass-card rounded-[2rem]", activePaymentTab === "due_payment" ? "ring-2 ring-primary bg-primary/5 shadow-xl shadow-primary/20 scale-[1.02]" : "")}
+                          onClick={() => setActivePaymentTab("due_payment")}
+                        >
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Due Collected</CardTitle>
+                            <CreditCard className="h-4 w-4 text-muted-foreground/40" />
+                          </CardHeader>
+                          <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
+                            <div className="text-2xl font-bold">৳{due?.value.toFixed(0)}</div>
+                          </CardContent>
+                        </Card>
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
 
                 <Card className="glass-card rounded-[3.5rem] border-white/20 overflow-hidden shadow-2xl">
@@ -588,8 +637,8 @@ export default function ReceptionistDashboard() {
                     <div>
                       <CardTitle className="text-3xl font-black tracking-tighter">
                         {activePaymentTab === "all_transactions" ? "All Financial Transactions" :
-                         activePaymentTab === "40%_penalty" ? "40% Fine Records" :
-                         activePaymentTab === "80%_penalty" ? "80% / 100% Fine Records" :
+                         activePaymentTab === "40%_penalty" ? "40% Penalty & Refund Records" :
+                         activePaymentTab === "80%_penalty" ? "80% / 100% Penalty & Refund Records" :
                          activePaymentTab === "successful_settlement" ? "Successful Settlements" :
                          "Due Collected Records"}
                       </CardTitle>
@@ -649,8 +698,11 @@ export default function ReceptionistDashboard() {
                             if (activePaymentTab === "successful_settlement") {
                               return p.type === "successful_settlement" || p.type === "booking_payment";
                             }
+                            if (activePaymentTab === "40%_penalty") {
+                              return p.type === "40%_penalty" || (p.type === "refund" && p.reason?.includes("40"));
+                            }
                             if (activePaymentTab === "80%_penalty") {
-                              return p.type === "80%_penalty" || p.type === "100%_penalty";
+                              return p.type === "80%_penalty" || p.type === "100%_penalty" || (p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100")));
                             }
                             return p.type === activePaymentTab;
                           })
@@ -675,8 +727,11 @@ export default function ReceptionistDashboard() {
                           if (activePaymentTab === "successful_settlement") {
                             return p.type === "successful_settlement" || p.type === "booking_payment";
                           }
+                          if (activePaymentTab === "40%_penalty") {
+                            return p.type === "40%_penalty" || (p.type === "refund" && p.reason?.includes("40"));
+                          }
                           if (activePaymentTab === "80%_penalty") {
-                            return p.type === "80%_penalty" || p.type === "100%_penalty";
+                            return p.type === "80%_penalty" || p.type === "100%_penalty" || (p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100")));
                           }
                           return p.type === activePaymentTab;
                         }).length === 0 && (

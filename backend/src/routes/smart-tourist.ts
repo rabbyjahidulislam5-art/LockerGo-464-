@@ -676,8 +676,8 @@ async function userDashboard(userId: string) {
     metrics: [
       { label: "Active bookings", value: relatedBookings.filter((item) => publicStatuses.has(item.status)).length, note: "Current running locker work" },
       { label: "Completed trips", value: relatedBookings.filter((item) => item.status === "completed").length, note: "Returned key and closed" },
-      { label: "Due payment", value: relatedPayments.filter((item) => item.type === "due_payment").reduce((sum, item) => sum + item.amount, 0), note: "Total dues settled" },
       { label: "Refunds", value: relatedPayments.filter((item) => item.type === "refund").reduce((sum, item) => sum + item.amount, 0), note: "Cancellation refunds" },
+      { label: "Penalty Paid", value: relatedPayments.filter((item) => item.type.includes("penalty")).reduce((sum, item) => sum + item.amount, 0), note: "Total cancellation penalties" },
     ],
   };
 }
@@ -747,8 +747,10 @@ async function receptionistDashboard(receptionistId: string) {
     history: stationBookings.filter(b => b.status === "completed" || b.status === "cancelled").map(enrichBooking),
     payments: stationPayments.map(enrichPayment),
     metrics: [
-        { label: "40% fine total", value: settledPayments.filter((item) => item.type === "40%_penalty").reduce((sum, item) => sum + item.amount, 0), note: "Cancellation before check-in" },
-        { label: "80% / 100% fine total", value: settledPayments.filter((item) => item.type === "80%_penalty" || item.type === "100%_penalty").reduce((sum, item) => sum + item.amount, 0), note: "Cancellation within 1 hour or after 1 hour" },
+        { label: "40% fine total", value: settledPayments.filter((item) => item.type === "40%_penalty").reduce((sum, item) => sum + item.amount, 0), note: "Total penalties from 40% cancellations" },
+        { label: "40% refund total", value: stationPayments.filter((item) => item.type === "refund" && bookings.find(b => b.id === item.bookingId)?.penaltyPercent === 40).reduce((sum, item) => sum + item.amount, 0), note: "Total refunds from 40% cancellations" },
+        { label: "80% / 100% fine total", value: settledPayments.filter((item) => item.type === "80%_penalty" || item.type === "100%_penalty").reduce((sum, item) => sum + item.amount, 0), note: "Total penalties from 80/100% cancellations" },
+        { label: "80% / 100% refund total", value: stationPayments.filter((item) => item.type === "refund" && [80, 100].includes(bookings.find(b => b.id === item.bookingId)?.penaltyPercent || 0)).reduce((sum, item) => sum + item.amount, 0), note: "Total refunds from 80/100% cancellations" },
         { label: "Successful booking total", value: settledPayments.filter((item) => item.type === "successful_settlement").reduce((sum, item) => {
           const booking = bookings.find(b => b.id === item.bookingId);
           if (booking && booking.status === "completed" && booking.penaltyPercent === 0) return sum + item.amount;
@@ -812,6 +814,10 @@ function adminDashboard() {
           return sum + item.amount;
       }, 0), note: "Payments, fines and settlements minus refunds" },
       { label: "Audit records", value: auditLogs.length, note: "Why, where and how provenance trail" },
+      { label: "40% Penalty", value: payments.filter(p => p.type === "40%_penalty").reduce((sum, p) => sum + p.amount, 0), note: "Total 40% penalty income" },
+      { label: "40% Refund", value: payments.filter(p => p.type === "refund" && bookings.find(b => b.id === p.bookingId)?.penaltyPercent === 40).reduce((sum, p) => sum + p.amount, 0), note: "Total 40% refund payouts" },
+      { label: "80% / 100% Penalty", value: payments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty").reduce((sum, p) => sum + p.amount, 0), note: "Total 80/100% penalty income" },
+      { label: "80% / 100% Refund", value: payments.filter(p => p.type === "refund" && [80, 100].includes(bookings.find(b => b.id === p.bookingId)?.penaltyPercent || 0)).reduce((sum, p) => sum + p.amount, 0), note: "Total 80/100% refund payouts" },
     ],
     bookings: bookings.map(enrichBooking),
     users,

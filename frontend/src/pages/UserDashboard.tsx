@@ -285,12 +285,13 @@ export default function UserDashboard() {
 
               <div className="grid gap-6 md:grid-cols-4">
                 {dashboard.metrics.map((m: any) => {
-                  const isProfile = m.label === "Refunds";
+                  const isRefund = m.label === "Refunds";
+                  const isPenalty = m.label === "Penalty Paid";
                   const isHistory = m.label === "Completed trips";
                   const isPayments = m.label === "Due payment";
-                  const label = isProfile ? "Refunds" : isHistory ? "Completed trips" : isPayments ? "Due payment" : "Ongoing Stays";
-                  const tabKey = isProfile ? "payments" : isHistory ? "history" : isPayments ? "payments" : "active";
-                  const Icon = isHistory ? History : isPayments ? CreditCard : isProfile ? User : Clock;
+                  const label = isRefund ? "Refunds" : isPenalty ? "Penalties" : isHistory ? "Completed trips" : isPayments ? "Due payment" : "Ongoing Stays";
+                  const tabKey = (isRefund || isPenalty) ? "payments" : isHistory ? "history" : isPayments ? "payments" : "active";
+                  const Icon = isHistory ? History : isPayments ? CreditCard : isRefund ? CreditCard : isPenalty ? AlertCircle : Clock;
 
                   return (
                     <motion.div
@@ -452,8 +453,8 @@ function PaymentRefundsInline({ payments }: { payments: PaymentRecord[] }) {
   }, [payments, filterType, filterValue]);
 
   const sections = {
-    preCancel: filteredPayments.filter(p => p.type === "40%_penalty"),
-    postCancel: filteredPayments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty"),
+    preCancel: filteredPayments.filter(p => p.type === "40%_penalty" || (p.type === "refund" && (p as any).reason?.includes("40"))),
+    postCancel: filteredPayments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty" || (p.type === "refund" && ((p as any).reason?.includes("80") || (p as any).reason?.includes("100")))),
     fullPayment: filteredPayments.filter(p => p.type === "booking_payment" || p.type === "successful_settlement"),
     duePayment: filteredPayments.filter(p => p.type === "due_payment")
   };
@@ -527,8 +528,8 @@ function PaymentRefundsInline({ payments }: { payments: PaymentRecord[] }) {
 
         <Tabs defaultValue="full" className="space-y-8">
           <TabsList className="flex flex-wrap h-auto p-2 gap-2 bg-muted/20 rounded-2xl border border-white/10">
-            <TabsTrigger value="pre" className="flex-1 min-w-[120px] rounded-xl font-black text-[10px] uppercase tracking-widest py-3">40% Refund</TabsTrigger>
-            <TabsTrigger value="post" className="flex-1 min-w-[120px] rounded-xl font-black text-[10px] uppercase tracking-widest py-3">Fine Logs</TabsTrigger>
+            <TabsTrigger value="pre" className="flex-1 min-w-[120px] rounded-xl font-black text-[10px] uppercase tracking-widest py-3">40% Penalty & Refund</TabsTrigger>
+            <TabsTrigger value="post" className="flex-1 min-w-[120px] rounded-xl font-black text-[10px] uppercase tracking-widest py-3">80% / 100% Penalty & Refund</TabsTrigger>
             <TabsTrigger value="full" className="flex-1 min-w-[120px] rounded-xl font-black text-[10px] uppercase tracking-widest py-3">Payments</TabsTrigger>
             <TabsTrigger value="due" className="flex-1 min-w-[120px] rounded-xl font-black text-[10px] uppercase tracking-widest py-3">Dues</TabsTrigger>
           </TabsList>

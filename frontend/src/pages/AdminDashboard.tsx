@@ -30,7 +30,9 @@ import {
   Filter,
   Star,
   Trash2,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck,
+  AlertCircle
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -186,7 +188,8 @@ export default function AdminDashboard() {
     if (activePaymentTab !== "all_transactions") {
       result = result.filter(p => {
         if (activePaymentTab === "successful_settlement") return p.type === "successful_settlement" || p.type === "booking_payment";
-        if (activePaymentTab === "80%_penalty") return p.type === "80%_penalty" || p.type === "100%_penalty";
+        if (activePaymentTab === "40%_penalty") return p.type === "40%_penalty" || (p.type === "refund" && p.reason?.includes("40"));
+        if (activePaymentTab === "80%_penalty") return p.type === "80%_penalty" || p.type === "100%_penalty" || (p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100")));
         return p.type === activePaymentTab;
       });
     }
@@ -854,7 +857,7 @@ export default function AdminDashboard() {
             {/* Financial Sub-navigation Cards */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
               <Card 
-                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "all_transactions" ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "all_transactions" ? "ring-2 ring-primary bg-primary/5 shadow-xl scale-[1.02]" : ""}`}
                 onClick={() => setActivePaymentTab("all_transactions")}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -867,38 +870,40 @@ export default function AdminDashboard() {
               </Card>
 
               <Card 
-                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "40%_penalty" ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "40%_penalty" ? "ring-2 ring-primary bg-primary/5 shadow-xl scale-[1.02]" : ""}`}
                 onClick={() => setActivePaymentTab("40%_penalty")}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">40% fine total</CardTitle>
-                  <CreditCard className="h-4 w-4 text-muted-foreground/40" />
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">40% Penalty & Refund</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">৳{dashboard.payments.filter(p => p.type === "40%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
+                  <div className="text-sm font-bold text-destructive">-৳{dashboard.payments.filter(p => p.type === "40%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-primary">+৳{dashboard.payments.filter(p => p.type === "refund" && p.reason?.includes("40")).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
               <Card 
-                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "80%_penalty" ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "80%_penalty" ? "ring-2 ring-primary bg-primary/5 shadow-xl scale-[1.02]" : ""}`}
                 onClick={() => setActivePaymentTab("80%_penalty")}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">80% and 100% fine total</CardTitle>
-                  <CreditCard className="h-4 w-4 text-muted-foreground/40" />
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">80/100% Penalty & Refund</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">৳{dashboard.payments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
+                  <div className="text-sm font-bold text-destructive">-৳{dashboard.payments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-primary">+৳{dashboard.payments.filter(p => p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100"))).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
               <Card 
-                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "successful_settlement" ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "successful_settlement" ? "ring-2 ring-primary bg-primary/5 shadow-xl scale-[1.02]" : ""}`}
                 onClick={() => setActivePaymentTab("successful_settlement")}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Successful booking total</CardTitle>
-                  <CreditCard className="h-4 w-4 text-muted-foreground/40" />
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Successful Settlements</CardTitle>
+                  <ShieldCheck className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
                   <div className="text-xl font-bold">৳{dashboard.payments.filter(p => p.type === "successful_settlement" || p.type === "booking_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
@@ -906,7 +911,7 @@ export default function AdminDashboard() {
               </Card>
 
               <Card 
-                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "due_payment" ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 relative ${activePaymentTab === "due_payment" ? "ring-2 ring-primary bg-primary/5 shadow-xl scale-[1.02]" : ""}`}
                 onClick={() => setActivePaymentTab("due_payment")}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -924,8 +929,8 @@ export default function AdminDashboard() {
                 <div>
                   <CardTitle>
                     {activePaymentTab === "all_transactions" ? "All Financial Transactions" :
-                     activePaymentTab === "40%_penalty" ? "40% Fine Records" :
-                     activePaymentTab === "80%_penalty" ? "80% and 100% Fine Records" :
+                     activePaymentTab === "40%_penalty" ? "40% Penalty & Refund Records" :
+                     activePaymentTab === "80%_penalty" ? "80% and 100% Penalty & Refund Records" :
                      activePaymentTab === "successful_settlement" ? "Successful Settlements" :
                      "Due Collected Records"}
                   </CardTitle>
