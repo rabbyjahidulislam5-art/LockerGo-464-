@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, MapPin, Search, Star, Quote, MessageSquare } from "lucide-react";
-import { useRealtime } from "@/lib/utils";
+import { useRealtime, getErrorMessage } from "@/lib/utils";
+
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -324,9 +325,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange }: { station:
         toast({ title: "OTP Sent Successfully", description: "Please check your registered email for the code." });
       },
       onError: (err: any) => {
-        const msg = err.message || "";
-        const cleanMsg = msg.includes(":") ? msg.split(":").pop()?.trim() : msg;
-        toast({ title: "Booking Request Failed", description: cleanMsg || "Unable to process booking. Please try again.", variant: "destructive" });
+        toast({ title: "Booking Request Failed", description: getErrorMessage(err), variant: "destructive" });
       }
     });
   };
@@ -341,9 +340,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange }: { station:
         setLocation("/user");
       },
       onError: (err: any) => {
-        const msg = err.message || "";
-        const cleanMsg = msg.includes(":") ? msg.split(":").pop()?.trim() : msg;
-        toast({ title: "Verification Failed", description: cleanMsg || "The OTP code is incorrect. Please check your email.", variant: "destructive" });
+        toast({ title: "Verification Failed", description: getErrorMessage(err), variant: "destructive" });
       }
     });
   };

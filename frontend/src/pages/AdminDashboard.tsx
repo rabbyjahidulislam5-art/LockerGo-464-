@@ -203,9 +203,75 @@ export default function AdminDashboard() {
     return result;
   }, [dashboard, activePaymentTab, paymentFilterType, paymentFilterValue, paymentPhoneFilter]);
 
-  const filteredStaffAudit = useMemo(() => {
+  const enrichedAuditLogs = useMemo(() => {
     if (!dashboard) return [];
-    let result = dashboard.auditLogs.filter(log => {
+    return dashboard.auditLogs.map(log => {
+      let actorEmail = "";
+      let actorPhone = "";
+      let actorAddress = "";
+      let userPhone = "";
+      let lockerNumber = "";
+      let stationName = "";
+      let stationId = log.stationId || "";
+
+      // 1. Try to find details from memory based on IDs
+      if (log.entityType === "user" || (log.entityType === "session" && log.actorRole === "user")) {
+        const user = dashboard.users.find(u => u.id === log.entityId);
+        if (user) {
+          actorEmail = user.email || "";
+          actorPhone = user.phone || "";
+          actorAddress = user.address || "";
+          userPhone = user.phone || "";
+        }
+      } else if (log.entityType === "receptionist" || (log.entityType === "session" && log.actorRole === "receptionist")) {
+        const rec = dashboard.receptionists.find(r => r.id === log.entityId);
+        if (rec) {
+          actorEmail = rec.email || "";
+          actorPhone = (rec as any).phone || "";
+          stationId = stationId || rec.stationId || "";
+        }
+      } else if (log.entityType === "booking") {
+        const b = dashboard.bookings.find(item => item.id === log.entityId);
+        if (b) {
+          userPhone = b.userPhone || "";
+          lockerNumber = b.lockerNumber?.toString() || "";
+          stationName = b.stationName || "";
+          stationId = stationId || b.stationId || "";
+        }
+      }
+
+      // 2. Deep enrichment from JSON (important for immutable history or deleted entities)
+      try {
+        const newVal = JSON.parse(log.newValue || "{}");
+        const prevVal = JSON.parse(log.previousValue || "{}");
+        const target = (newVal && typeof newVal === 'object' && Object.keys(newVal).length > 0) ? newVal : prevVal;
+        
+        if (target && typeof target === 'object') {
+          actorEmail = actorEmail || target.email || target.userEmail || target.actorEmail || "";
+          actorPhone = actorPhone || target.phone || target.userPhone || target.actorPhone || "";
+          actorAddress = actorAddress || target.address || target.userAddress || target.actorAddress || "";
+          userPhone = userPhone || target.userPhone || target.phone || "";
+          lockerNumber = lockerNumber || target.lockerNumber?.toString() || target.number?.toString() || "";
+          stationName = stationName || target.stationName || "";
+          stationId = stationId || target.stationId || "";
+        }
+      } catch {}
+
+      return {
+        ...log,
+        actorEmail,
+        actorPhone,
+        actorAddress,
+        userPhone,
+        lockerNumber,
+        stationName,
+        stationId
+      };
+    });
+  }, [dashboard]);
+
+  const filteredStaffAudit = useMemo(() => {
+    let result = enrichedAuditLogs.filter(log => {
       const entity = String(log.entityType || '').toLowerCase();
       const action = String(log.actionType || '').toLowerCase();
       return ["user", "receptionist"].includes(entity) || ["login", "logout", "registration", "profile_update"].includes(action);
@@ -218,19 +284,12 @@ export default function AdminDashboard() {
     if (staffPhoneFilter) result = result.filter(log => (log.actorPhone || "").includes(staffPhoneFilter));
     if (staffAddressFilter) result = result.filter(log => (log.actorAddress || "").toLowerCase().includes(staffAddressFilter.toLowerCase()));
     return result;
-  }, [dashboard, staffRoleFilter, staffNameFilter, staffDayFilter, staffMonthFilter, staffEmailFilter, staffPhoneFilter, staffAddressFilter]);
+  }, [enrichedAuditLogs, staffRoleFilter, staffNameFilter, staffDayFilter, staffMonthFilter, staffEmailFilter, staffPhoneFilter, staffAddressFilter]);
 
   const filteredBookingAudit = useMemo(() => {
-    if (!dashboard) return [];
-    let result = dashboard.auditLogs.filter(log => log.entityType === "booking");
+    let result = enrichedAuditLogs.filter(log => log.entityType === "booking");
     if (bookingLockerIdFilter) {
-      result = result.filter(log => {
-        try {
-          const newVal = JSON.parse(log.newValue);
-          const prevVal = JSON.parse(log.previousValue);
-          return (newVal?.lockerNumber || prevVal?.lockerNumber)?.toString() === bookingLockerIdFilter;
-        } catch { return false; }
-      });
+      result = result.filter(log => (log.lockerNumber || "").toString() === bookingLockerIdFilter);
     }
     if (bookingStatusFilter !== "all") {
       result = result.filter(log => {
@@ -240,35 +299,45 @@ export default function AdminDashboard() {
     if (bookingDayFilter) result = result.filter(log => formatDateLocal(log.createdAt) === bookingDayFilter);
     if (bookingMonthFilter) result = result.filter(log => formatMonthLocal(log.createdAt) === bookingMonthFilter);
     if (bookingUserPhoneFilter) {
-      result = result.filter(log => {
-        try {
-          const newVal = JSON.parse(log.newValue);
-          const prevVal = JSON.parse(log.previousValue);
-          return (newVal?.userPhone || prevVal?.userPhone)?.includes(bookingUserPhoneFilter);
-        } catch { return false; }
-      });
+      result = result.filter(log => (log.userPhone || "").includes(bookingUserPhoneFilter));
+    }
+    if (bookingStationFilter !== "all") {
+      result = result.filter(log => log.stationId === bookingStationFilter);
+    }
+    if (bookingActorRoleFilter !== "all") {
+      result = result.filter(log => log.actorRole === bookingActorRoleFilter);
     }
     return result;
-  }, [dashboard, bookingLockerIdFilter, bookingStatusFilter, bookingDayFilter, bookingMonthFilter, bookingUserPhoneFilter]);
+  }, [enrichedAuditLogs, bookingLockerIdFilter, bookingStatusFilter, bookingDayFilter, bookingMonthFilter, bookingUserPhoneFilter, bookingStationFilter, bookingActorRoleFilter]);
 
   const filteredPaymentAudit = useMemo(() => {
-    if (!dashboard) return [];
-    let result = dashboard.auditLogs.filter(log => {
+    let result = enrichedAuditLogs.filter(log => {
       const actionStr = (log.action || log.actionType || '').toLowerCase();
       return actionStr.includes('payment') || actionStr.includes('penalty') || actionStr.includes('refund') || actionStr.includes('settlement');
     });
+    if (paymentTypeFilter !== "all") {
+      result = result.filter(log => (log.action || log.actionType || '').toLowerCase().includes(paymentTypeFilter.toLowerCase()));
+    }
+    if (paymentUserPhoneFilter) {
+      result = result.filter(log => (log.userPhone || "").includes(paymentUserPhoneFilter));
+    }
+    if (paymentLockerFilter) {
+      result = result.filter(log => (log.lockerNumber || "").toString() === paymentLockerFilter);
+    }
+    if (paymentStationFilter !== "all") {
+      result = result.filter(log => log.stationId === paymentStationFilter);
+    }
     if (paymentDayFilter) result = result.filter(log => formatDateLocal(log.createdAt) === paymentDayFilter);
     if (paymentMonthFilter) result = result.filter(log => formatMonthLocal(log.createdAt) === paymentMonthFilter);
     return result;
-  }, [dashboard, paymentDayFilter, paymentMonthFilter]);
+  }, [enrichedAuditLogs, paymentTypeFilter, paymentUserPhoneFilter, paymentLockerFilter, paymentStationFilter, paymentDayFilter, paymentMonthFilter]);
 
   const filteredReviewAudit = useMemo(() => {
-    if (!dashboard) return [];
-    let result = dashboard.auditLogs.filter(log => log.entityType === "review");
+    let result = enrichedAuditLogs.filter(log => log.entityType === "review");
     if (reviewDayFilter) result = result.filter(log => formatDateLocal(log.createdAt) === reviewDayFilter);
     if (reviewMonthFilter) result = result.filter(log => formatMonthLocal(log.createdAt) === reviewMonthFilter);
     return result;
-  }, [dashboard, reviewDayFilter, reviewMonthFilter]);
+  }, [enrichedAuditLogs, reviewDayFilter, reviewMonthFilter]);
 
   useEffect(() => {
     if (role !== "admin" || !adminName) setLocation("/");

@@ -19,7 +19,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogOut, User } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
+
 
 export function Navbar() {
   const { role, user, receptionist, adminName, logout } = useAuth();
@@ -233,20 +234,12 @@ function LoginDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpenCh
         if (data.role === "admin") setLocation("/admin");
       },
       onError: (err: any) => {
-        const rawMessage = err.message || "";
-        let friendlyMessage = "Invalid credentials. Please try again.";
+        const message = getErrorMessage(err);
+        const friendlyTitle = message.includes("not found") ? "Account Not Found" : "Authentication Failed";
         
-        if (rawMessage.includes("User not found")) {
-          friendlyMessage = "Account not found. Please verify your ID or register first.";
-        } else if (rawMessage.includes("Invalid password") || rawMessage.includes("credentials")) {
-          friendlyMessage = "Incorrect password. Please verify your credentials.";
-        } else if (rawMessage.includes("400") || rawMessage.includes("404")) {
-          friendlyMessage = rawMessage.split(":").pop()?.trim() || "Authentication failed.";
-        }
-
         toast({ 
-          title: "Authentication Failed", 
-          description: friendlyMessage, 
+          title: friendlyTitle, 
+          description: message, 
           variant: "destructive" 
         });
       }

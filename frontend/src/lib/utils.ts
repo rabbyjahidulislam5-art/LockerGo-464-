@@ -45,3 +45,14 @@ export function formatMonthLocal(dateInput: string | Date | number): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
 }
+
+/**
+ * Returns a user-friendly error message by stripping technical prefixes (like HTTP 400).
+ */
+export function getErrorMessage(err: any): string {
+  const msg = err?.message || "";
+  if (msg.includes(":")) {
+    return msg.split(":").pop()?.trim() || "An unexpected error occurred.";
+  }
+  return msg || "An unexpected error occurred.";
+}
