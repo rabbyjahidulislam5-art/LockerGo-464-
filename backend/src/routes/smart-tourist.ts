@@ -1187,18 +1187,29 @@ router.post("/smart-tourist/bookings/:bookingId/cancel", asyncRoute(async (req, 
 
   const audit = addAudit("user", booking.userName, "booking_cancelled", "booking", booking.id, previous, { ...booking, ...userAuditData }, booking.stationId);
   
-  // Explicitly add to payment audit log for Penalty
+  // Log Penalty Payment
   addAudit("user", booking.userName, actionType, "payment_audit", penaltyPayment.id, "none", {
-    ...penaltyPayment,
+    id: penaltyPayment.id,
+    bookingId: penaltyPayment.bookingId,
+    userId: penaltyPayment.userId,
+    stationId: penaltyPayment.stationId,
+    type: penaltyPayment.type,
+    amount: penaltyPayment.amount,
+    reason: penaltyPayment.reason,
     ...userAuditData
   }, booking.stationId);
 
-  // Explicitly add to payment audit log for Refund
+  // Log Refund Payment
   if (refundPayment) {
     addAudit("user", booking.userName, "refund", "payment_audit", refundPayment.id, "none", {
-      ...refundPayment,
-      ...userAuditData,
-      transactionType: "refund"
+      id: refundPayment.id,
+      bookingId: refundPayment.bookingId,
+      userId: refundPayment.userId,
+      stationId: refundPayment.stationId,
+      type: refundPayment.type,
+      amount: refundPayment.amount,
+      reason: refundPayment.reason,
+      ...userAuditData
     }, booking.stationId);
   }
 
