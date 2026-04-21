@@ -321,12 +321,12 @@ export default function AdminDashboard() {
         const logContent = (log.newValue || '').toLowerCase();
         
         if (paymentTypeFilter === "40_penalty") {
-          return actionStr.includes("40 penalty") || (actionStr.includes("refund") && logContent.includes("40"));
+          return actionStr.includes("40 penalty") || (actionStr.includes("refund") && /40\s*%/.test(logContent));
         }
         
         if (paymentTypeFilter === "80_penalty") {
           return actionStr.includes("80 penalty") || actionStr.includes("100 penalty") || 
-                 (actionStr.includes("refund") && (logContent.includes("80") || logContent.includes("100")));
+                 (actionStr.includes("refund") && (/(80|100)\s*%/.test(logContent)));
         }
         
         const filterStr = paymentTypeFilter.toLowerCase().replace(/_/g, ' ').replace(/%/g, '');
