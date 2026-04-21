@@ -38,7 +38,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { cn, useRealtime, formatDateLocal, formatMonthLocal } from "@/lib/utils";
+import { cn, useRealtime, formatDateLocal, formatMonthLocal, formatDateTime } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -665,8 +665,8 @@ export default function AdminDashboard() {
                                 <div className="text-[10px] text-muted-foreground font-medium">{booking.destinationName}</div>
                               </TableCell>
                               <TableCell>
-                                <div className="text-xs font-black">IN: {new Date(booking.checkInTime).toLocaleString()}</div>
-                                <div className="text-[10px] text-muted-foreground font-medium">EXP: {new Date(booking.checkOutTime).toLocaleString()}</div>
+                                <div className="text-xs font-black">IN: {formatDateTime(booking.checkInTime)}</div>
+                                <div className="text-[10px] text-muted-foreground font-medium">EXP: {formatDateTime(booking.checkOutTime)}</div>
                               </TableCell>
                               <TableCell className="font-black text-xl text-primary">৳{booking.amount?.toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
@@ -756,7 +756,7 @@ export default function AdminDashboard() {
                                 <div className="font-black text-xs uppercase">{item.stationName}</div>
                                 <div className="text-[10px] text-muted-foreground">{item.destinationName}</div>
                               </TableCell>
-                              <TableCell className="text-xs font-black uppercase tracking-tight">{new Date(item.createdAt).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-xs font-black uppercase tracking-tight">{formatDateTime(item.createdAt)}</TableCell>
                               <TableCell className="font-black text-xl">৳{item.amount?.toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
                                 <Badge variant="outline" className="rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-primary/20 text-primary">{item.status}</Badge>
@@ -993,7 +993,7 @@ export default function AdminDashboard() {
                         <TableCell className="text-xs font-bold">#{(payment as any).lockerNumber}</TableCell>
                         <TableCell className="text-xs">{(payment as any).stationName}</TableCell>
                         <TableCell className="text-xs">{payment.reason}</TableCell>
-                        <TableCell className="text-xs">{new Date(payment.createdAt).toLocaleString()}</TableCell>
+                        <TableCell className="text-xs">{formatDateTime(payment.createdAt)}</TableCell>
                         <TableCell className="text-right font-bold text-primary">৳{payment.amount.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
@@ -1180,7 +1180,7 @@ export default function AdminDashboard() {
                     <TableBody>
                       {filteredStaffAudit.map(log => (
                         <TableRow key={log.id}>
-                          <TableCell className="text-xs whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
                           <TableCell>
                             <Badge variant="secondary" className="mb-1">{log.actorRole}</Badge>
                             <div className="text-xs font-medium">{log.actorName}</div>
@@ -1363,7 +1363,7 @@ export default function AdminDashboard() {
 
                         return (
                           <TableRow key={log.id}>
-                            <TableCell className="text-xs whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
                             <TableCell>
                               <div className="font-medium text-xs">{log.actionType?.replace(/_/g, ' ')}</div>
                               <Badge variant="secondary" className="text-[10px] h-4 mt-1">{log.actorRole}</Badge>
@@ -1532,7 +1532,7 @@ export default function AdminDashboard() {
                         }
                         return (
                           <TableRow key={log.id}>
-                            <TableCell className="text-xs whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className="capitalize text-[10px]">{log.actionType?.replace(/_/g, ' ')}</Badge>
                             </TableCell>
@@ -1620,7 +1620,7 @@ export default function AdminDashboard() {
                     <TableBody>
                       {filteredReviewAudit.map(log => (
                         <TableRow key={log.id}>
-                          <TableCell className="text-xs whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
                           <TableCell>
                             <Badge variant="secondary" className="mb-1">{log.actorRole}</Badge>
                             <div className="text-xs font-bold">{log.actorName}</div>
@@ -1827,10 +1827,10 @@ function AdminReviewsPanel() {
                     <TableCell>
                       <div>
                         <p className="text-xs font-bold">
-                          {new Date(review.createdAt).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" })}
+                          {formatDateTime(review.createdAt)}
                         </p>
                         <p className="text-[10px] text-muted-foreground font-mono">
-                          {new Date(review.createdAt).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" })}
+                          {formatDateTime(review.createdAt)}
                         </p>
                       </div>
                     </TableCell>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Quote, MessageSquare, ArrowLeft } from "lucide-react";
-import { useRealtime } from "@/lib/utils";
+import { useRealtime, formatDateTime } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -150,7 +150,7 @@ export default function PublicReviews() {
                           <div>
                             <p className="font-black text-sm">{review.userName}</p>
                             <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                              {new Date(review.createdAt).toLocaleDateString("en-BD", { day: 'numeric', month: 'long', year: 'numeric' })}
+                              {formatDateTime(review.createdAt)}
                             </p>
                           </div>
                         </div>

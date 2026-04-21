@@ -22,7 +22,7 @@ import { Loader2, Key, CheckCircle, CheckCircle2, Lock, Activity, AlertCircle, H
 import { useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn, useRealtime, formatDateLocal, formatMonthLocal } from "@/lib/utils";
+import { cn, useRealtime, formatDateLocal, formatMonthLocal, formatDateTime } from "@/lib/utils";
 import { useMemo } from "react";
 
 function DashboardSkeleton() {
@@ -428,8 +428,8 @@ export default function ReceptionistDashboard() {
                             <TableCell className="font-black text-sm">{booking.userName}</TableCell>
                             <TableCell className="text-[10px] text-muted-foreground font-bold tracking-widest">{booking.userPhone}</TableCell>
                             <TableCell className="font-black text-xs uppercase tracking-tight">{booking.stationName}</TableCell>
-                            <TableCell className="text-xs font-black">{new Date(booking.checkInTime).toLocaleString()}</TableCell>
-                            <TableCell className="text-xs font-black">{new Date(booking.checkOutTime).toLocaleString()}</TableCell>
+                            <TableCell className="text-xs font-black">{formatDateTime(booking.checkInTime)}</TableCell>
+                            <TableCell className="text-xs font-black">{formatDateTime(booking.checkOutTime)}</TableCell>
                             <TableCell className="font-black text-xl text-primary">৳{booking.totalAmount?.toFixed(2) || booking.amount?.toFixed(2)}</TableCell>
                             <TableCell className="px-12 text-right">
                               <Badge className="rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-none shadow-lg bg-primary text-white shadow-primary/20">{booking.status}</Badge>
@@ -515,9 +515,9 @@ export default function ReceptionistDashboard() {
                             <TableCell className="font-black text-sm">{item.userName}</TableCell>
                             <TableCell className="text-[10px] text-muted-foreground font-bold">{item.userPhone}</TableCell>
                             <TableCell className="font-black text-xs uppercase">{item.stationName}</TableCell>
-                            <TableCell className="text-xs font-black tracking-tight">{new Date(item.createdAt).toLocaleDateString()}</TableCell>
-                            <TableCell className="text-xs font-bold">{new Date(item.checkInTime).toLocaleString()}</TableCell>
-                            <TableCell className="text-xs font-bold">{new Date(item.checkOutTime).toLocaleString()}</TableCell>
+                            <TableCell className="text-xs font-black tracking-tight">{formatDateTime(item.createdAt)}</TableCell>
+                            <TableCell className="text-xs font-bold">{formatDateTime(item.checkInTime)}</TableCell>
+                            <TableCell className="text-xs font-bold">{formatDateTime(item.checkOutTime)}</TableCell>
                             <TableCell className="font-black text-xl text-primary">৳{item.totalAmount?.toFixed(2) || item.amount?.toFixed(2)}</TableCell>
                             <TableCell className="px-12 text-right">
                               <Badge variant="outline" className="rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-primary/20 text-primary">{item.status}</Badge>
@@ -713,12 +713,12 @@ export default function ReceptionistDashboard() {
                                   {payment.type.replace(/_/g, ' ')}
                                 </TableCell>
                               )}
-                              <TableCell className={cn("text-xs font-bold", activePaymentTab !== "all_transactions" ? "px-12" : "")}>{(payment as any).userName}</TableCell>
+                            <TableCell className={cn("text-xs font-bold", activePaymentTab !== "all_transactions" ? "px-12" : "")}>{(payment as any).userName}</TableCell>
                               <TableCell className="text-[10px] font-bold text-muted-foreground tracking-widest">{(payment as any).userPhone}</TableCell>
                               <TableCell className="text-xl font-black tracking-tighter">#{(payment as any).lockerNumber}</TableCell>
                               <TableCell className="text-xs font-black uppercase">{(payment as any).stationName}</TableCell>
                               <TableCell className="text-xs font-medium">{payment.reason}</TableCell>
-                              <TableCell className="text-xs font-bold">{new Date(payment.createdAt).toLocaleString()}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{formatDateTime(payment.createdAt)}</TableCell>
                               <TableCell className="px-12 text-right font-black text-xl text-primary">৳{payment.amount.toFixed(2)}</TableCell>
                             </TableRow>
                           ))}
@@ -880,7 +880,7 @@ function QueueItem({ booking, receptionistId }: { booking: Booking, receptionist
           Station: <span className="font-medium text-foreground">{booking.stationName}</span>
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          Check-in: {new Date(booking.checkInTime).toLocaleString()} | Check-out: {new Date(booking.checkOutTime).toLocaleString()}
+          Check-in: {formatDateTime(booking.checkInTime)} | Check-out: {formatDateTime(booking.checkOutTime)}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           Duration: <span className="font-medium text-foreground">{booking.durationHours} hrs</span> | Total: <span className="font-bold text-primary">৳{booking.totalAmount?.toFixed(2) || booking.amount?.toFixed(2)}</span>

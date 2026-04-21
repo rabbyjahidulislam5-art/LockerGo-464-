@@ -30,7 +30,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Clock, MapPin, XCircle, Key, LogOut, CreditCard, User, History, Search, AlertCircle, Star } from "lucide-react";
-import { cn, useRealtime, formatDateLocal, formatMonthLocal } from "@/lib/utils";
+import { cn, useRealtime, formatDateLocal, formatMonthLocal, getDateTimeLocal, formatDateTime } from "@/lib/utils";
 
 function DashboardSkeleton() {
   return (
@@ -413,7 +413,7 @@ function BookingHistoryInline({ history }: { history: Booking[] }) {
                   <TableRow key={item.id} className="border-b-white/40 hover:bg-white/10 transition-colors">
                     <TableCell className="font-bold p-6">{item.stationName}</TableCell>
                     <TableCell className="p-6 font-medium">Unit #{item.lockerNumber}</TableCell>
-                    <TableCell className="p-6 text-muted-foreground">{new Date(item.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="p-6 text-muted-foreground">{formatDateTime(item.createdAt)}</TableCell>
                     <TableCell className="font-black text-lg text-primary p-6">৳{item.totalAmount?.toFixed(2) || item.amount?.toFixed(2)}</TableCell>
                     <TableCell className="p-6">
                       <Badge className={`px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest ${item.status === 'completed' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-primary/10 text-primary border-primary/20'}`}>
@@ -478,7 +478,7 @@ function PaymentRefundsInline({ payments }: { payments: PaymentRecord[] }) {
                 <div className="font-bold text-sm">{(item as any).stationName || "System Update"}</div>
                 <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{item.reason}</div>
               </TableCell>
-              <TableCell className="p-6 text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</TableCell>
+              <TableCell className="p-6 text-xs text-muted-foreground">{formatDateTime(item.createdAt)}</TableCell>
               <TableCell className={`p-6 text-right font-black text-xl ${item.type.includes('penalty') ? 'text-destructive' : 'text-primary'}`}>
                 {item.type.includes('penalty') ? '-' : '+'}৳{item.amount.toFixed(2)}
               </TableCell>
@@ -618,15 +618,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange, userId, onSu
   const [selectedLocker, setSelectedLocker] = useState<Locker | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [durationHours, setDurationHours] = useState("4");
-  const [checkInTime, setCheckInTime] = useState(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  });
+  const [checkInTime, setCheckInTime] = useState(() => getDateTimeLocal());
   const [otpId, setOtpId] = useState("");
   const [otp, setOtp] = useState("");
   const requestOtp = useRequestSmartTouristBookingOtp();
@@ -643,7 +635,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange, userId, onSu
     setSelectedLocker(null);
     setShowForm(false);
     setDurationHours("4");
-    setCheckInTime(new Date().toISOString().slice(0, 16));
+    setCheckInTime(getDateTimeLocal());
     setOtpId("");
     setOtp("");
   };
@@ -874,11 +866,11 @@ function BookingCard({ booking, userId }: { booking: Booking, userId: string }) 
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="font-bold text-muted-foreground">Checkout</span>
-                <span className="font-black">{new Date(booking.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="font-black">{formatDateTime(booking.checkOutTime)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="font-bold text-muted-foreground">Booking Date</span>
-                <span className="font-black">{new Date(booking.createdAt).toLocaleDateString()}</span>
+                <span className="font-black">{formatDateTime(booking.createdAt)}</span>
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-dashed border-primary/20">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Investment</span>
@@ -1238,7 +1230,7 @@ function ReviewsInline({ userId, userName }: { userId: string; userName: string 
                   <div className="flex items-start justify-between gap-4">
                     <StarRating value={review.rating} readonly />
                     <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap">
-                      {new Date(review.createdAt).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" })}
+                      {formatDateTime(review.createdAt)}
                     </span>
                   </div>
                   <p className="mt-3 text-sm text-foreground/80 leading-relaxed">{review.text}</p>
