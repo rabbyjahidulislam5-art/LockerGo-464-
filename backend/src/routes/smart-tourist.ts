@@ -1168,14 +1168,11 @@ router.post("/smart-tourist/bookings/:bookingId/cancel", asyncRoute(async (req, 
     payments.unshift(refundPayment);
   }
   
-  const dbOps = [
-    saveRow("bookings", booking.id, booking),
-    saveRow("payments", penaltyPayment.id, penaltyPayment)
-  ];
+  await saveRow("bookings", booking.id, booking);
+  await saveRow("payments", penaltyPayment.id, penaltyPayment);
   if (refundPayment) {
-    dbOps.push(saveRow("payments", refundPayment.id, refundPayment));
+    await saveRow("payments", refundPayment.id, refundPayment);
   }
-  await Promise.all(dbOps);
   
   const user = users.find(u => u.id === booking.userId) || { name: booking.userName };
   const userAuditData = {
