@@ -1512,7 +1512,7 @@ export default function AdminDashboard() {
                           const newVal = parseSafe(log.newValue);
                           const prevVal = parseSafe(log.previousValue);
                           
-                          const target = (newVal.userName || newVal.name || newVal.userPhone || newVal.phone || newVal.userEmail || newVal.email || newVal.transactionType === "refund" || newVal.type) ? newVal : prevVal;
+                          const target = (newVal.amount !== undefined || newVal.type || newVal.userName || newVal.name) ? newVal : prevVal;
 
                           userName = target.userName || target.name || "";
                           userPhone = target.userPhone || target.phone || (target.user && target.user.phone) || "";
