@@ -317,8 +317,11 @@ export default function AdminDashboard() {
     });
     if (paymentTypeFilter !== "all") {
       result = result.filter(log => {
-        const actionStr = (log.action || log.actionType || '').toLowerCase().replace(/_/g, ' ');
-        const filterStr = paymentTypeFilter.toLowerCase().replace(/_/g, ' ');
+        const actionStr = (log.action || log.actionType || '').toLowerCase().replace(/_/g, ' ').replace(/%/g, '');
+        if (paymentTypeFilter === "80_penalty") {
+          return actionStr.includes("80 penalty") || actionStr.includes("100 penalty") || actionStr.includes("refund");
+        }
+        const filterStr = paymentTypeFilter.toLowerCase().replace(/_/g, ' ').replace(/%/g, '');
         return actionStr.includes(filterStr);
       });
     }
