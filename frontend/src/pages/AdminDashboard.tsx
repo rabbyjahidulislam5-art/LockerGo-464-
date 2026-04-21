@@ -316,7 +316,11 @@ export default function AdminDashboard() {
       return actionStr.includes('payment') || actionStr.includes('penalty') || actionStr.includes('refund') || actionStr.includes('settlement');
     });
     if (paymentTypeFilter !== "all") {
-      result = result.filter(log => (log.action || log.actionType || '').toLowerCase().includes(paymentTypeFilter.toLowerCase()));
+      result = result.filter(log => {
+        const actionStr = (log.action || log.actionType || '').toLowerCase().replace(/_/g, ' ');
+        const filterStr = paymentTypeFilter.toLowerCase().replace(/_/g, ' ');
+        return actionStr.includes(filterStr);
+      });
     }
     if (paymentUserPhoneFilter) {
       result = result.filter(log => (log.userPhone || "").includes(paymentUserPhoneFilter));
@@ -1247,7 +1251,7 @@ export default function AdminDashboard() {
                             <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="Select Station" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="item-aligned">
                               <SelectItem value="all">All Stations</SelectItem>
                               {stations.map(s => (
                                 <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -1408,10 +1412,10 @@ export default function AdminDashboard() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Transactions</SelectItem>
-                              <SelectItem value="40% Penalty">40% Penalty</SelectItem>
-                              <SelectItem value="80% and 100% Refund">80% and 100% Refund</SelectItem>
-                              <SelectItem value="Payment Successful">Payment Successful</SelectItem>
-                              <SelectItem value="Due Collected">Due Collected</SelectItem>
+                              <SelectItem value="40_penalty">40% Penalty</SelectItem>
+                              <SelectItem value="80_penalty">80% and 100% Refund</SelectItem>
+                              <SelectItem value="booking_payment">Payment Successful</SelectItem>
+                              <SelectItem value="due_payment">Due Collected</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1429,7 +1433,7 @@ export default function AdminDashboard() {
                             <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="Select Station" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="item-aligned">
                               <SelectItem value="all">All Stations</SelectItem>
                               {stations.map(s => (
                                 <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
