@@ -117,12 +117,12 @@ export default function AdminDashboard() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [reportSections, setReportSections] = useState({
-    bookings: true,
-    penalty40: true,
-    penalty80: true,
-    settlement: true,
-    due: true,
-    staff: true,
+    bookings: false,
+    penalty40: false,
+    penalty80: false,
+    settlement: false,
+    due: false,
+    staff: false,
   });
 
   const [bookingDayFilter, setBookingDayFilter] = useState("");
@@ -1922,9 +1922,6 @@ export default function AdminDashboard() {
                       curY=drawSectionHeader("STATION RECEPTIONISTS",curY,[245,158,11]);
                       autoTable(doc,{startY:curY,head:[["#","Name","Station","Email"]],body:fr.map((r,i)=>[i+1,r.name,(r as any).stationName||"-",(r as any).email||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
                       curY=(doc as any).lastAutoTable.finalY+8;
-                      doc.setFillColor(15,23,42); doc.roundedRect(10,curY,pageW-20,20,4,4,"F");
-                      doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.text("GRAND TOTAL — MONTHLY SUMMARY",18,curY+8);
-                      doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.text(`Total Payments: BDT ${totalRevenue.toFixed(2)}   |   Penalties: BDT ${totalPenalties.toFixed(2)}   |   Refunds: BDT ${totalRefunds.toFixed(2)}   |   Net: BDT ${(totalRevenue-totalRefunds).toFixed(2)}`,18,curY+15);
                     }
 
                     const pages=(doc as any).internal.getNumberOfPages();
