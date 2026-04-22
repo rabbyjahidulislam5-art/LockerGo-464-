@@ -91,6 +91,9 @@ export default function AdminDashboard() {
   const [activeFilterValue, setActiveFilterValue] = useState("");
   const [activeStationFilter, setActiveStationFilter] = useState("all");
   
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedReceptionist, setSelectedReceptionist] = useState<any>(null);
+
   const [staffNameFilter, setStaffNameFilter] = useState("");
   const [staffRoleFilter, setStaffRoleFilter] = useState<"all" | "admin" | "receptionist" | "user">("all");
   const [staffDayFilter, setStaffDayFilter] = useState("");
@@ -798,7 +801,7 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {dashboard.users.map(u => (
-                      <TableRow key={u.id}>
+                      <TableRow key={u.id} className="cursor-pointer hover:bg-primary/5 transition-colors" onClick={() => setSelectedUser(u)}>
                         <TableCell className="font-medium">{u.name}</TableCell>
                         <TableCell>
                           <div className="text-xs font-medium">{u.phone}</div>
@@ -829,7 +832,7 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {dashboard.receptionists.map(r => (
-                      <TableRow key={r.id}>
+                      <TableRow key={r.id} className="cursor-pointer hover:bg-primary/5 transition-colors" onClick={() => setSelectedReceptionist(r)}>
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell>
                           <div className="text-xs font-medium">{r.stationName}</div>
@@ -842,6 +845,100 @@ export default function AdminDashboard() {
                 </Table>
               </CardContent>
             </Card>
+
+            {/* User Detail Modal */}
+            <Dialog open={!!selectedUser} onOpenChange={(open) => { if (!open) setSelectedUser(null); }}>
+              <DialogContent className="sm:max-w-lg rounded-[2.5rem] glass-card p-0 overflow-hidden shadow-2xl">
+                <div className="bg-primary/5 p-10 border-b border-white/10">
+                  <div className="flex items-center gap-6">
+                    <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30">
+                      <UserCircle className="h-10 w-10 text-white" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-3xl font-black tracking-tighter">{selectedUser?.name}</DialogTitle>
+                      <DialogDescription className="font-bold text-primary opacity-60">Traveler Profile Details</DialogDescription>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-10 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Full Name</p>
+                      <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedUser?.name || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Phone</p>
+                      <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedUser?.phone || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email</p>
+                      <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedUser?.email || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Address</p>
+                      <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedUser?.address || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Password</p>
+                    <p className="text-sm font-bold bg-primary/5 p-3 rounded-xl border-2 border-primary/20">{selectedUser?.password || '••••••'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">User ID</p>
+                    <p className="text-xs font-mono font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedUser?.id || 'N/A'}</p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Receptionist Detail Modal */}
+            <Dialog open={!!selectedReceptionist} onOpenChange={(open) => { if (!open) setSelectedReceptionist(null); }}>
+              <DialogContent className="sm:max-w-lg rounded-[2.5rem] glass-card p-0 overflow-hidden shadow-2xl">
+                <div className="bg-primary/5 p-10 border-b border-white/10">
+                  <div className="flex items-center gap-6">
+                    <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30">
+                      <LayoutDashboard className="h-10 w-10 text-white" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-3xl font-black tracking-tighter">{selectedReceptionist?.name}</DialogTitle>
+                      <DialogDescription className="font-bold text-primary opacity-60">Receptionist Profile Details</DialogDescription>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-10 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Full Name</p>
+                      <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedReceptionist?.name || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Employee ID</p>
+                      <p className="text-xs font-mono font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedReceptionist?.id || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Station Assignment</p>
+                      <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedReceptionist?.stationName || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Station ID</p>
+                      <p className="text-xs font-mono font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedReceptionist?.stationId || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email</p>
+                    <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedReceptionist?.email || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Password</p>
+                    <p className="text-sm font-bold bg-primary/5 p-3 rounded-xl border-2 border-primary/20">{selectedReceptionist?.password || '••••••'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Phone</p>
+                    <p className="text-sm font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{(selectedReceptionist as any)?.phone || 'N/A'}</p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </motion.div>
         )}
 
