@@ -1787,7 +1787,7 @@ export default function AdminDashboard() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">User Phone Number</Label>
-                    <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="e.g. 01787037483" className="pl-10 rounded-xl bg-white/50 border-white/40" value={reportUserPhone} onChange={e => setReportUserPhone(e.target.value)} /></div>
+                    <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="e.g. 01710000000" className="pl-10 rounded-xl bg-white/50 border-white/40" value={reportUserPhone} onChange={e => setReportUserPhone(e.target.value)} /></div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Receptionist Email</Label>
@@ -1905,7 +1905,8 @@ export default function AdminDashboard() {
                     }
 
                     if (reportSections.staff) {
-                      doc.addPage(); drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`); curY=38;
+                      if (hasPaymentSections) { doc.addPage(); } // Only add new page if payment pages exist; otherwise use page 1
+                      drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`); curY=38;
                       const tu=dashboard.users.length; const nu=dashboard.users.filter(u=>{const d=new Date((u as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
                       const tr=dashboard.receptionists.length; const nr=dashboard.receptionists.filter(r=>{const d=new Date((r as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
                       const sb=[{label:"Total Travelers",val:`${tu}`,color:[99,102,241] as [number,number,number]},{label:"New This Month",val:`${nu}`,color:[16,185,129] as [number,number,number]},{label:"Total Receptionists",val:`${tr}`,color:[245,158,11] as [number,number,number]},{label:"New This Month",val:`${nr}`,color:[139,92,246] as [number,number,number]}];
