@@ -1037,7 +1037,7 @@ function UserProfileForm({ userId, user }: { userId: string, user: any }) {
           </div>
           <div className="space-y-3 col-span-1 sm:col-span-2">
             <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">New Security Key (Password)</Label>
-            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Leave empty to maintain existing key" className="h-16 rounded-2xl bg-primary/5 border-2 border-primary/20 font-black text-lg px-6" />
+            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} minLength={6} placeholder="Leave empty to maintain existing key" className="h-16 rounded-2xl bg-primary/5 border-2 border-primary/20 font-black text-lg px-6" />
           </div>
           <Button type="submit" disabled={updateProfile.isPending} className="col-span-1 sm:col-span-2 h-16 rounded-3xl font-black text-2xl shadow-2xl shadow-primary/20 ripple">
             {updateProfile.isPending ? <Loader2 className="h-8 w-8 animate-spin" /> : "Commit Profile Updates"}

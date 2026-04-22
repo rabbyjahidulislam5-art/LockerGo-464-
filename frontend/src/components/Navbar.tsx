@@ -376,7 +376,7 @@ function RegisterDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpe
           </div>
           <div className="space-y-2">
             <Label htmlFor="reg-password">Password</Label>
-            <Input id="reg-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="new-password" />
+            <Input id="reg-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} autoComplete="new-password" />
           </div>
           <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
             {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -992,6 +992,9 @@ router.post("/smart-tourist/logout", (req, res) => {
 
 router.post("/smart-tourist/register", asyncRoute(async (req, res) => {
   const body = req.body;
+  if (!body.password || body.password.length < 6) {
+    throw new Error("Password must be at least 6 characters long.");
+  }
   const user = { id: `user-${nextId++}`, ...body };
   users.unshift(user);
   await saveRow("users", user.id, user);
@@ -1008,6 +1011,9 @@ router.get("/smart-tourist/user/:userId", asyncRoute(async (req, res) => {
 router.patch("/smart-tourist/user/:userId", asyncRoute(async (req, res) => {
   const { userId } = req.params;
   const body = req.body;
+  if (body.password !== undefined && body.password.length > 0 && body.password.length < 6) {
+    throw new Error("Password must be at least 6 characters long.");
+  }
   const index = users.findIndex((item) => item.id === userId);
   const previous = users[index] ?? users[0];
   users[index < 0 ? 0 : index] = { ...previous, ...body };
