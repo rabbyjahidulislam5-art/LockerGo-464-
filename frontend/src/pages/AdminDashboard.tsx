@@ -380,7 +380,7 @@ export default function AdminDashboard() {
       if (typeof obj === 'object') {
         return (
           <div className="space-y-1 bg-muted/20 p-2 rounded-lg border border-white/10">
-            {Object.entries(obj).filter(([k]) => k !== 'id').slice(0, 4).map(([k, v]) => (
+            {Object.entries(obj).filter(([k]) => !['id', 'userId', 'bookingId', 'stationId'].includes(k)).slice(0, 4).map(([k, v]) => (
               <div key={k} className="text-[10px] flex justify-between gap-4">
                 <span className="font-black uppercase tracking-widest text-muted-foreground">{k}:</span>
                 <span className="font-bold truncate max-w-[100px]">{String(v)}</span>
