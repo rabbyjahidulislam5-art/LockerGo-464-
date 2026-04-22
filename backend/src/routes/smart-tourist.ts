@@ -1287,6 +1287,7 @@ router.post("/smart-tourist/bookings/:bookingId/cancel", asyncRoute(async (req, 
   // Log Refund Payment
   if (refundPayment) {
     addAudit("user", booking.userName, "refund", "payment_audit", refundPayment.id, "none", {
+      ...userAuditData,
       id: refundPayment.id,
       bookingId: refundPayment.bookingId,
       userId: refundPayment.userId,
@@ -1294,7 +1295,6 @@ router.post("/smart-tourist/bookings/:bookingId/cancel", asyncRoute(async (req, 
       type: refundPayment.type,
       amount: refundPayment.amount,
       reason: refundPayment.reason,
-      ...userAuditData
     }, booking.stationId);
   }
 
