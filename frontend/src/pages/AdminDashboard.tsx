@@ -109,13 +109,6 @@ export default function AdminDashboard() {
   const [bookingUserPhoneFilter, setBookingUserPhoneFilter] = useState("");
   const [pulseFilter, setPulseFilter] = useState<"week" | "month">("month");
 
-  // Report Generator State
-  const [reportUserPhone, setReportUserPhone] = useState("");
-  const [reportRecepEmail, setReportRecepEmail] = useState("");
-  const [reportMonth, setReportMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
   const [reportSections, setReportSections] = useState({
     bookings: false,
     penalty40: false,
@@ -123,6 +116,10 @@ export default function AdminDashboard() {
     settlement: false,
     due: false,
     staff: false,
+  });
+  const [reportMonth, setReportMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
   const [bookingDayFilter, setBookingDayFilter] = useState("");
@@ -1777,29 +1774,9 @@ export default function AdminDashboard() {
               <h2 className="text-3xl font-black tracking-tighter mb-1">Report Generator</h2>
               <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Generate professional monthly PDF reports</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Box 1 */}
-              <Card className="glass-card rounded-[2.5rem] border-white/20 shadow-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-base font-black"><Filter className="h-4 w-4 text-primary" />Filter By Person</CardTitle>
-                  <CardDescription className="text-[10px] uppercase tracking-widest">Optional — leave empty for all records</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">User Phone Number</Label>
-                    <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="e.g. 01710000000" className="pl-10 rounded-xl bg-white/50 border-white/40" value={reportUserPhone} onChange={e => setReportUserPhone(e.target.value)} /></div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Receptionist Email</Label>
-                    <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="e.g. rec@smarttourist.bd" className="pl-10 rounded-xl bg-white/50 border-white/40" value={reportRecepEmail} onChange={e => setReportRecepEmail(e.target.value)} /></div>
-                  </div>
-                  {(reportUserPhone || reportRecepEmail) && (
-                    <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 rounded-xl text-xs" onClick={() => { setReportUserPhone(""); setReportRecepEmail(""); }}>Clear Filters</Button>
-                  )}
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-              {/* Box 2 */}
+              {/* Report Sections */}
               <Card className="glass-card rounded-[2.5rem] border-white/20 shadow-xl">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-base font-black"><CheckCircle2 className="h-4 w-4 text-primary" />Report Sections</CardTitle>
