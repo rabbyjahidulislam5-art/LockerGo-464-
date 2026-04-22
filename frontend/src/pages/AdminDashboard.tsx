@@ -883,10 +883,6 @@ export default function AdminDashboard() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-primary">Password</p>
                     <p className="text-sm font-bold bg-primary/5 p-3 rounded-xl border-2 border-primary/20">{selectedUser?.password || '••••••'}</p>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">User ID</p>
-                    <p className="text-xs font-mono font-bold bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/40">{selectedUser?.id || 'N/A'}</p>
-                  </div>
                 </div>
               </DialogContent>
             </Dialog>
