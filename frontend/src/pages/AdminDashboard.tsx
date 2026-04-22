@@ -1882,22 +1882,27 @@ export default function AdminDashboard() {
                       doc.text("SUBTOTAL",14,lastY+5.5); doc.text(`BDT ${total.toFixed(2)}`,pageW-12,lastY+5.5,{align:"right"}); doc.setTextColor(0,0,0); return lastY+10;
                     };
 
-                    drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);
-                    let curY = 38;
+                    const hasPaymentSections = reportSections.bookings || reportSections.penalty40 || reportSections.penalty80 || reportSections.settlement || reportSections.due;
                     const totalRevenue = payments.reduce((s,p)=>s+p.amount,0);
                     const totalPenalties = payments.filter(p=>p.type.includes("penalty")).reduce((s,p)=>s+p.amount,0);
                     const totalRefunds = payments.filter(p=>p.type==="refund").reduce((s,p)=>s+p.amount,0);
                     const totalBookingsCt = dashboard.bookings.filter(b=>{const d=new Date(b.createdAt);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
-                    const boxes = [{label:"Total Bookings",val:`${totalBookingsCt}`,color:[99,102,241] as [number,number,number]},{label:"Total Revenue",val:`BDT ${totalRevenue.toFixed(2)}`,color:[16,185,129] as [number,number,number]},{label:"Total Penalties",val:`BDT ${totalPenalties.toFixed(2)}`,color:[239,68,68] as [number,number,number]},{label:"Total Refunds",val:`BDT ${totalRefunds.toFixed(2)}`,color:[245,158,11] as [number,number,number]}];
-                    const bw = (pageW-20)/4-3;
-                    boxes.forEach((b,i)=>{const bx=10+i*(bw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,bw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+bw/2,curY+6,{align:"center"});doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text(b.val,bx+bw/2,curY+13,{align:"center"});});
-                    curY+=24; doc.setTextColor(0,0,0);
+                    let curY = 38;
 
-                    if (reportSections.bookings) { const bd=payments.filter(p=>p.type==="booking_payment"); if(bd.length>0){ curY=drawSectionHeader("BOOKING PAYMENTS",curY,[99,102,241]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(bd),...tStyle}); curY=addSubtotal(bd,(doc as any).lastAutoTable.finalY); } }
-                    if (reportSections.penalty40) { const p40=payments.filter(p=>p.type==="40%_penalty"||(p.type==="refund"&&p.reason?.includes("40"))); if(p40.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("40% PENALTY & REFUND",curY,[239,68,68]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p40),...tStyle}); curY=addSubtotal(p40,(doc as any).lastAutoTable.finalY); } }
-                    if (reportSections.penalty80) { const p80=payments.filter(p=>p.type==="80%_penalty"||p.type==="100%_penalty"||(p.type==="refund"&&(p.reason?.includes("80")||p.reason?.includes("100")))); if(p80.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("80% / 100% PENALTY & REFUND",curY,[220,38,38]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p80),...tStyle}); curY=addSubtotal(p80,(doc as any).lastAutoTable.finalY); } }
-                    if (reportSections.settlement) { const settle=payments.filter(p=>p.type==="successful_settlement"); if(settle.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("SUCCESSFUL SETTLEMENTS",curY,[16,185,129]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(settle),...tStyle}); curY=addSubtotal(settle,(doc as any).lastAutoTable.finalY); } }
-                    if (reportSections.due) { const due=payments.filter(p=>p.type==="due_payment"); if(due.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("DUE PAYMENT COLLECTED",curY,[245,158,11]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(due),...tStyle}); curY=addSubtotal(due,(doc as any).lastAutoTable.finalY); } }
+                    if (hasPaymentSections) {
+                      drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);
+                      curY = 38;
+                      const boxes = [{label:"Total Bookings",val:`${totalBookingsCt}`,color:[99,102,241] as [number,number,number]},{label:"Total Revenue",val:`BDT ${totalRevenue.toFixed(2)}`,color:[16,185,129] as [number,number,number]},{label:"Total Penalties",val:`BDT ${totalPenalties.toFixed(2)}`,color:[239,68,68] as [number,number,number]},{label:"Total Refunds",val:`BDT ${totalRefunds.toFixed(2)}`,color:[245,158,11] as [number,number,number]}];
+                      const bw = (pageW-20)/4-3;
+                      boxes.forEach((b,i)=>{const bx=10+i*(bw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,bw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+bw/2,curY+6,{align:"center"});doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text(b.val,bx+bw/2,curY+13,{align:"center"});});
+                      curY+=24; doc.setTextColor(0,0,0);
+
+                      if (reportSections.bookings) { const bd=payments.filter(p=>p.type==="booking_payment"); if(bd.length>0){ curY=drawSectionHeader("BOOKING PAYMENTS",curY,[99,102,241]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(bd),...tStyle}); curY=addSubtotal(bd,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.penalty40) { const p40=payments.filter(p=>p.type==="40%_penalty"||(p.type==="refund"&&p.reason?.includes("40"))); if(p40.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("40% PENALTY & REFUND",curY,[239,68,68]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p40),...tStyle}); curY=addSubtotal(p40,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.penalty80) { const p80=payments.filter(p=>p.type==="80%_penalty"||p.type==="100%_penalty"||(p.type==="refund"&&(p.reason?.includes("80")||p.reason?.includes("100")))); if(p80.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("80% / 100% PENALTY & REFUND",curY,[220,38,38]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p80),...tStyle}); curY=addSubtotal(p80,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.settlement) { const settle=payments.filter(p=>p.type==="successful_settlement"); if(settle.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("SUCCESSFUL SETTLEMENTS",curY,[16,185,129]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(settle),...tStyle}); curY=addSubtotal(settle,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.due) { const due=payments.filter(p=>p.type==="due_payment"); if(due.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("DUE PAYMENT COLLECTED",curY,[245,158,11]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(due),...tStyle}); curY=addSubtotal(due,(doc as any).lastAutoTable.finalY); } }
+                    }
 
                     if (reportSections.staff) {
                       doc.addPage(); drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`); curY=38;
