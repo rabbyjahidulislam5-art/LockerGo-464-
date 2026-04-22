@@ -32,7 +32,9 @@ import {
   Trash2,
   MessageSquare,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Download
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -106,6 +108,22 @@ export default function AdminDashboard() {
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [bookingUserPhoneFilter, setBookingUserPhoneFilter] = useState("");
   const [pulseFilter, setPulseFilter] = useState<"week" | "month">("month");
+
+  // Report Generator State
+  const [reportUserPhone, setReportUserPhone] = useState("");
+  const [reportRecepEmail, setReportRecepEmail] = useState("");
+  const [reportMonth, setReportMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [reportSections, setReportSections] = useState({
+    bookings: true,
+    penalty40: true,
+    penalty80: true,
+    settlement: true,
+    due: true,
+    staff: true,
+  });
 
   const [bookingDayFilter, setBookingDayFilter] = useState("");
   const [bookingMonthFilter, setBookingMonthFilter] = useState("");
@@ -407,6 +425,7 @@ export default function AdminDashboard() {
     { id: "payments", label: "Financials", icon: CreditCard },
     { id: "audit", label: "Audit Engine", icon: History },
     { id: "reviews", label: "Reviews", icon: Star },
+    { id: "reports", label: "Reports", icon: FileText },
   ];
 
   return (
@@ -1751,6 +1770,170 @@ export default function AdminDashboard() {
             <AdminReviewsPanel />
           </motion.div>
         )}
+
+        {activeTab === "reports" && (
+          <motion.div key="reports" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-black tracking-tighter mb-1">Report Generator</h2>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Generate professional monthly PDF reports</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Box 1 */}
+              <Card className="glass-card rounded-[2.5rem] border-white/20 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-base font-black"><Filter className="h-4 w-4 text-primary" />Filter By Person</CardTitle>
+                  <CardDescription className="text-[10px] uppercase tracking-widest">Optional — leave empty for all records</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">User Phone Number</Label>
+                    <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="e.g. 01787037483" className="pl-10 rounded-xl bg-white/50 border-white/40" value={reportUserPhone} onChange={e => setReportUserPhone(e.target.value)} /></div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Receptionist Email</Label>
+                    <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="e.g. rec@smarttourist.bd" className="pl-10 rounded-xl bg-white/50 border-white/40" value={reportRecepEmail} onChange={e => setReportRecepEmail(e.target.value)} /></div>
+                  </div>
+                  {(reportUserPhone || reportRecepEmail) && (
+                    <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 rounded-xl text-xs" onClick={() => { setReportUserPhone(""); setReportRecepEmail(""); }}>Clear Filters</Button>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Box 2 */}
+              <Card className="glass-card rounded-[2.5rem] border-white/20 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-base font-black"><CheckCircle2 className="h-4 w-4 text-primary" />Report Sections</CardTitle>
+                  <CardDescription className="text-[10px] uppercase tracking-widest">Select what to include in PDF</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {([
+                    { key: "bookings", label: "Total Bookings", desc: "All booking transactions" },
+                    { key: "penalty40", label: "40% Penalty & Refund", desc: "40% cancellation records" },
+                    { key: "penalty80", label: "80/100% Penalty & Refund", desc: "80/100% cancellation records" },
+                    { key: "settlement", label: "Successful Settlements", desc: "Completed & settlement payments" },
+                    { key: "due", label: "Due Payment Collected", desc: "Due payment records" },
+                    { key: "staff", label: "Staff Summary", desc: "Users & receptionists count" },
+                  ] as const).map(({ key, label, desc }) => (
+                    <div key={key} className="flex items-center gap-3 p-3 rounded-xl hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => setReportSections(s => ({ ...s, [key]: !s[key] }))}>
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${reportSections[key] ? "bg-primary border-primary" : "border-muted-foreground/30"}`}>
+                        {reportSections[key] && <CheckCircle2 className="h-3 w-3 text-white" />}
+                      </div>
+                      <div><p className="text-xs font-black">{label}</p><p className="text-[10px] text-muted-foreground">{desc}</p></div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Box 3 */}
+              <Card className="glass-card rounded-[2.5rem] border-white/20 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-base font-black"><Calendar className="h-4 w-4 text-primary" />Report Period</CardTitle>
+                  <CardDescription className="text-[10px] uppercase tracking-widest">Select month to generate report</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Month & Year</Label>
+                    <Input type="month" className="rounded-xl bg-white/50 border-white/40 font-bold" value={reportMonth} onChange={e => setReportMonth(e.target.value)} />
+                  </div>
+                  {dashboard && reportMonth && (() => {
+                    const [yr2, mo2] = reportMonth.split("-").map(Number);
+                    const mp = dashboard.payments.filter(p => { const d = new Date(p.createdAt); return d.getFullYear()===yr2 && d.getMonth()+1===mo2; });
+                    const mb = dashboard.bookings.filter(b => { const d = new Date(b.createdAt); return d.getFullYear()===yr2 && d.getMonth()+1===mo2; });
+                    return (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-primary/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Bookings</p><p className="text-xl font-black text-primary">{mb.length}</p></div>
+                        <div className="bg-emerald-500/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Revenue</p><p className="text-lg font-black text-emerald-600">৳{mp.reduce((s,p)=>s+p.amount,0).toFixed(0)}</p></div>
+                      </div>
+                    );
+                  })()}
+                  <Button className="w-full h-14 rounded-2xl font-black text-sm gap-2 shadow-2xl shadow-primary/20" onClick={async () => {
+                    if (!dashboard || !reportMonth) return;
+                    const { default: jsPDF } = await import("jspdf");
+                    const autoTable = (await import("jspdf-autotable")).default;
+                    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+                    const [yr, mo] = reportMonth.split("-").map(Number);
+                    const monthName = new Date(yr, mo-1, 1).toLocaleString("en-US", { month: "long" });
+                    const generatedAt = formatDateTime(new Date().toISOString());
+                    const pageW = doc.internal.pageSize.getWidth();
+
+                    let payments = dashboard.payments.filter(p => { const d = new Date(p.createdAt); return d.getFullYear()===yr && d.getMonth()+1===mo; });
+                    if (reportUserPhone) payments = payments.filter(p => (p as any).userPhone?.includes(reportUserPhone));
+                    const repEmail = reportRecepEmail.toLowerCase();
+
+                    const drawHeader = (title: string) => {
+                      doc.setFillColor(15,23,42); doc.rect(0,0,pageW,22,"F");
+                      doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica","bold"); doc.text("Smart Locker System",10,13);
+                      doc.setFontSize(10); doc.text(title,pageW-10,13,{align:"right"});
+                      doc.setFillColor(241,245,249); doc.rect(0,22,pageW,10,"F");
+                      doc.setTextColor(71,85,105); doc.setFontSize(7); doc.setFont("helvetica","normal");
+                      doc.text(`Report Period: ${monthName} ${yr}`,10,28); doc.text(`Generated: ${generatedAt}`,pageW-10,28,{align:"right"}); doc.setTextColor(0,0,0);
+                    };
+                    const drawSectionHeader = (title: string, y: number, color: [number,number,number]=[99,102,241]) => {
+                      doc.setFillColor(...color); doc.rect(10,y,3,7,"F");
+                      doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(15,23,42); doc.text(title,16,y+5.5); return y+10;
+                    };
+                    const cols = ["#","Date & Time","Name","Phone","Locker #","Station","Type","Amount (BDT)"];
+                    const makeRows = (data: typeof payments) => data.map((p,i)=>[i+1,formatDateTime((p as any).createdAt),(p as any).userName||"-",(p as any).userPhone||"-",`#${(p as any).lockerNumber||"-"}`,(p as any).stationName||"-",p.type.replace(/_/g," ").toUpperCase(),p.amount.toFixed(2)]);
+                    const tStyle: any = { headStyles:{fillColor:[15,23,42],textColor:255,fontStyle:"bold",fontSize:7}, bodyStyles:{fontSize:7,cellPadding:2}, alternateRowStyles:{fillColor:[248,250,252]}, columnStyles:{0:{cellWidth:8},7:{halign:"right",fontStyle:"bold"}}, margin:{left:10,right:10}, tableLineColor:[226,232,240], tableLineWidth:0.1 };
+                    const addSubtotal = (data: typeof payments, lastY: number) => {
+                      const total = data.reduce((s,p)=>s+p.amount,0);
+                      doc.setFillColor(241,245,249); doc.rect(10,lastY,pageW-20,8,"F");
+                      doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(15,23,42);
+                      doc.text("SUBTOTAL",14,lastY+5.5); doc.text(`BDT ${total.toFixed(2)}`,pageW-12,lastY+5.5,{align:"right"}); doc.setTextColor(0,0,0); return lastY+10;
+                    };
+
+                    drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);
+                    let curY = 38;
+                    const totalRevenue = payments.reduce((s,p)=>s+p.amount,0);
+                    const totalPenalties = payments.filter(p=>p.type.includes("penalty")).reduce((s,p)=>s+p.amount,0);
+                    const totalRefunds = payments.filter(p=>p.type==="refund").reduce((s,p)=>s+p.amount,0);
+                    const totalBookingsCt = dashboard.bookings.filter(b=>{const d=new Date(b.createdAt);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
+                    const boxes = [{label:"Total Bookings",val:`${totalBookingsCt}`,color:[99,102,241] as [number,number,number]},{label:"Total Revenue",val:`BDT ${totalRevenue.toFixed(2)}`,color:[16,185,129] as [number,number,number]},{label:"Total Penalties",val:`BDT ${totalPenalties.toFixed(2)}`,color:[239,68,68] as [number,number,number]},{label:"Total Refunds",val:`BDT ${totalRefunds.toFixed(2)}`,color:[245,158,11] as [number,number,number]}];
+                    const bw = (pageW-20)/4-3;
+                    boxes.forEach((b,i)=>{const bx=10+i*(bw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,bw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+bw/2,curY+6,{align:"center"});doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text(b.val,bx+bw/2,curY+13,{align:"center"});});
+                    curY+=24; doc.setTextColor(0,0,0);
+
+                    if (reportSections.bookings) { const bd=payments.filter(p=>p.type==="booking_payment"); curY=drawSectionHeader("BOOKING PAYMENTS",curY,[99,102,241]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(bd),...tStyle}); curY=addSubtotal(bd,(doc as any).lastAutoTable.finalY); }
+                    if (reportSections.penalty40) { if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} const p40=payments.filter(p=>p.type==="40%_penalty"||(p.type==="refund"&&p.reason?.includes("40"))); curY=drawSectionHeader("40% PENALTY & REFUND",curY,[239,68,68]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p40),...tStyle}); curY=addSubtotal(p40,(doc as any).lastAutoTable.finalY); }
+                    if (reportSections.penalty80) { if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} const p80=payments.filter(p=>p.type==="80%_penalty"||p.type==="100%_penalty"||(p.type==="refund"&&(p.reason?.includes("80")||p.reason?.includes("100")))); curY=drawSectionHeader("80% / 100% PENALTY & REFUND",curY,[220,38,38]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p80),...tStyle}); curY=addSubtotal(p80,(doc as any).lastAutoTable.finalY); }
+                    if (reportSections.settlement) { if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} const settle=payments.filter(p=>p.type==="successful_settlement"); curY=drawSectionHeader("SUCCESSFUL SETTLEMENTS",curY,[16,185,129]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(settle),...tStyle}); curY=addSubtotal(settle,(doc as any).lastAutoTable.finalY); }
+                    if (reportSections.due) { if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} const due=payments.filter(p=>p.type==="due_payment"); curY=drawSectionHeader("DUE PAYMENT COLLECTED",curY,[245,158,11]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(due),...tStyle}); curY=addSubtotal(due,(doc as any).lastAutoTable.finalY); }
+
+                    if (reportSections.staff) {
+                      doc.addPage(); drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`); curY=38;
+                      const tu=dashboard.users.length; const nu=dashboard.users.filter(u=>{const d=new Date((u as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
+                      const tr=dashboard.receptionists.length; const nr=dashboard.receptionists.filter(r=>{const d=new Date((r as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
+                      const sb=[{label:"Total Travelers",val:`${tu}`,color:[99,102,241] as [number,number,number]},{label:"New This Month",val:`${nu}`,color:[16,185,129] as [number,number,number]},{label:"Total Receptionists",val:`${tr}`,color:[245,158,11] as [number,number,number]},{label:"New This Month",val:`${nr}`,color:[139,92,246] as [number,number,number]}];
+                      const sbw=(pageW-20)/4-3;
+                      sb.forEach((b,i)=>{const bx=10+i*(sbw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,sbw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+sbw/2,curY+6,{align:"center"});doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text(b.val,bx+sbw/2,curY+13,{align:"center"});});
+                      curY+=24; doc.setTextColor(0,0,0);
+                      let fu=dashboard.users; if(reportUserPhone) fu=fu.filter(u=>(u as any).phone?.includes(reportUserPhone));
+                      curY=drawSectionHeader("REGISTERED TRAVELERS",curY,[99,102,241]);
+                      autoTable(doc,{startY:curY,head:[["#","Name","Phone","Email","Address"]],body:fu.map((u,i)=>[i+1,u.name,(u as any).phone||"-",u.email||"-",(u as any).address||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
+                      curY=(doc as any).lastAutoTable.finalY+8;
+                      if(curY>160){doc.addPage();drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`);curY=38;}
+                      let fr=dashboard.receptionists; if(repEmail) fr=fr.filter(r=>(r as any).email?.toLowerCase().includes(repEmail));
+                      curY=drawSectionHeader("STATION RECEPTIONISTS",curY,[245,158,11]);
+                      autoTable(doc,{startY:curY,head:[["#","Name","Station","Email"]],body:fr.map((r,i)=>[i+1,r.name,(r as any).stationName||"-",(r as any).email||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
+                      curY=(doc as any).lastAutoTable.finalY+8;
+                      doc.setFillColor(15,23,42); doc.roundedRect(10,curY,pageW-20,20,4,4,"F");
+                      doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.text("GRAND TOTAL — MONTHLY SUMMARY",18,curY+8);
+                      doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.text(`Total Payments: BDT ${totalRevenue.toFixed(2)}   |   Penalties: BDT ${totalPenalties.toFixed(2)}   |   Refunds: BDT ${totalRefunds.toFixed(2)}   |   Net: BDT ${(totalRevenue-totalRefunds).toFixed(2)}`,18,curY+15);
+                    }
+
+                    const pages=(doc as any).internal.getNumberOfPages();
+                    for(let i=1;i<=pages;i++){doc.setPage(i);const pH=doc.internal.pageSize.getHeight();doc.setFillColor(241,245,249);doc.rect(0,pH-10,pageW,10,"F");doc.setFontSize(7);doc.setFont("helvetica","normal");doc.setTextColor(100,116,139);doc.text(`Page ${i} of ${pages}`,pageW/2,pH-3,{align:"center"});doc.text("Smart Locker System — Confidential",10,pH-3);doc.text(`${monthName} ${yr} Report`,pageW-10,pH-3,{align:"right"});}
+                    doc.save(`LockerGo_Report_${monthName}_${yr}.pdf`);
+                  }}>
+                    <Download className="h-4 w-4" /> Generate PDF Report
+                  </Button>
+                  <p className="text-[10px] text-center text-muted-foreground">File: <span className="font-mono font-bold">LockerGo_Report_{reportMonth ? new Date(reportMonth+"-01").toLocaleString("en-US",{month:"long",year:"numeric"}) : "..."}.pdf</span></p>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+        )}
+
 
           </AnimatePresence>
         </div>
