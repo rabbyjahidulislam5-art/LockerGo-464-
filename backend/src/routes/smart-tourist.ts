@@ -63,6 +63,7 @@ router.post("/smart-tourist/receptionist/:receptionistId/update-profile", asyncR
   // Security Logic: Update only allowed fields
   if (body.phone !== undefined) receptionists[index].phone = body.phone;
   if (body.password) {
+    if (body.password.length < 6) throw new Error("Password must be at least 6 characters long.");
     receptionists[index].password = body.password;
   }
   

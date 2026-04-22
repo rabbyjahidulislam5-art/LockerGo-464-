@@ -811,6 +811,7 @@ export default function ReceptionistDashboard() {
                             value={profilePassword} 
                             onChange={(e) => setProfilePassword(e.target.value)} 
                             placeholder="Enter new password" 
+                            minLength={6}
                             className="h-14 rounded-2xl bg-white/50 border-white/40 shadow-inner font-bold focus:border-primary/50 transition-colors"
                           />
                         </div>
