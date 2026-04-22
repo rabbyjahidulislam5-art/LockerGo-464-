@@ -1834,8 +1834,7 @@ export default function AdminDashboard() {
                     const pageW = doc.internal.pageSize.getWidth();
 
                     let payments = dashboard.payments.filter(p => { const d = new Date(p.createdAt); return d.getFullYear()===yr && d.getMonth()+1===mo; });
-                    if (reportUserPhone) payments = payments.filter(p => (p as any).userPhone?.includes(reportUserPhone));
-                    const repEmail = reportRecepEmail.toLowerCase();
+
 
                     const drawHeader = (title: string) => {
                       doc.setFillColor(15,23,42); doc.rect(0,0,pageW,22,"F");
