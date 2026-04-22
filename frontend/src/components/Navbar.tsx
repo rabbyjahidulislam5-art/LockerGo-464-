@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
-import { useGetSmartTouristBootstrap, useSmartTouristLogin, useSmartTouristRegister } from "@workspace/api-client-react";
+import { useGetSmartTouristBootstrap, useSmartTouristLogin, useSmartTouristRegister, useRequestPasswordResetOtp, useUpdatePasswordWithOtp } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,10 +188,13 @@ function AuthDialogs() {
     return () => window.removeEventListener("smart-tourist-open-register", openRegisterDialog);
   }, []);
   
+  const [openForgot, setOpenForgot] = useState(false);
+
   return (
     <>
-      <LoginDialog open={openLogin} onOpenChange={setOpenLogin} onSwitch={() => { setOpenLogin(false); setOpenRegister(true); }} />
+      <LoginDialog open={openLogin} onOpenChange={setOpenLogin} onSwitch={() => { setOpenLogin(false); setOpenRegister(true); }} onForgot={() => { setOpenLogin(false); setOpenForgot(true); }} />
       <RegisterDialog open={openRegister} onOpenChange={setOpenRegister} onSwitch={() => { setOpenRegister(false); setOpenLogin(true); }} />
+      <ForgotPasswordDialog open={openForgot} onOpenChange={setOpenForgot} onSwitch={() => { setOpenForgot(false); setOpenLogin(true); }} />
       
       <Button variant="ghost" onClick={() => setOpenLogin(true)} className="font-bold text-sm">Login</Button>
       <Button onClick={() => setOpenRegister(true)} className="font-bold text-sm rounded-xl px-6 shadow-lg shadow-primary/20">Get Started</Button>
@@ -199,7 +202,7 @@ function AuthDialogs() {
   );
 }
 
-function LoginDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpenChange: (open: boolean) => void; onSwitch: () => void }) {
+function LoginDialog({ open, onOpenChange, onSwitch, onForgot }: { open: boolean; onOpenChange: (open: boolean) => void; onSwitch: () => void; onForgot: () => void }) {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const { setAuth } = useAuth();
@@ -287,6 +290,12 @@ function LoginDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpenCh
               />
             </div>
           
+            <div className="flex items-center justify-end">
+              <button type="button" onClick={onForgot} className="text-[11px] font-bold text-muted-foreground hover:text-primary hover:underline underline-offset-4 transition-colors">
+                Forgot Password?
+              </button>
+            </div>
+            
             <Button type="submit" className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 mt-4 group" disabled={loginMutation.isPending}>
               {loginMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Access System"}
             </Button>
@@ -380,6 +389,164 @@ function RegisterDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpe
             </button>
           </div>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ForgotPasswordDialog({ open, onOpenChange, onSwitch }: { open: boolean; onOpenChange: (open: boolean) => void; onSwitch: () => void }) {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [identifier, setIdentifier] = useState("");
+  const [otpId, setOtpId] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  
+  const { toast } = useToast();
+  const requestOtpMutation = useRequestPasswordResetOtp();
+  const updatePasswordMutation = useUpdatePasswordWithOtp();
+
+  const handleRequestOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identifier) return;
+    
+    // Prevent admin/staff from using this
+    const lower = identifier.trim().toLowerCase();
+    if (lower.endsWith("@smartlocker.bd") || lower.endsWith("@smarttourist.bd")) {
+      toast({ title: "Operation Restricted", description: "Staff and Admin passwords cannot be reset here.", variant: "destructive" });
+      return;
+    }
+
+    requestOtpMutation.mutate({ data: { identifier } }, {
+      onSuccess: (data) => {
+        setOtpId(data.otpId || "");
+        toast({ title: "OTP Sent", description: data.message });
+        setStep(2);
+      },
+      onError: (err: any) => {
+        const msg = err.message || "";
+        const cleanMsg = msg.includes(":") ? msg.split(":").pop()?.trim() : msg;
+        toast({ title: "Request Failed", description: cleanMsg || "Unable to send OTP. Please try again.", variant: "destructive" });
+      }
+    });
+  };
+
+  const handleUpdatePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || !newPassword || !confirmPassword) return;
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Validation Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Validation Error", description: "Password must be at least 6 characters long.", variant: "destructive" });
+      return;
+    }
+
+    updatePasswordMutation.mutate({ data: { otpId, otp, newPassword } }, {
+      onSuccess: (data) => {
+        toast({ title: "Success", description: data.message });
+        onOpenChange(false);
+        setStep(1);
+        setIdentifier("");
+        setOtp("");
+        setNewPassword("");
+        setConfirmPassword("");
+        onSwitch(); // Go back to login
+      },
+      onError: (err: any) => {
+        const msg = err.message || "";
+        const cleanMsg = msg.includes(":") ? msg.split(":").pop()?.trim() : msg;
+        toast({ title: "Update Failed", description: cleanMsg || "Unable to update password. Please try again.", variant: "destructive" });
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(val) => {
+      onOpenChange(val);
+      if (!val) {
+        setTimeout(() => setStep(1), 300);
+      }
+    }}>
+      <DialogContent className="sm:max-w-[425px] rounded-3xl border-primary/10 shadow-2xl overflow-hidden p-0">
+        <div className="bg-primary/5 p-8 border-b border-primary/10">
+          <DialogTitle className="text-3xl font-black tracking-tighter">
+            {step === 1 ? "Reset Password" : "Verify & Update"}
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground font-medium mt-1">
+            {step === 1 ? "Enter your phone or email to receive an OTP." : "Enter the OTP sent to your email and your new password."}
+          </DialogDescription>
+        </div>
+
+        <div className="p-8 space-y-8">
+          {step === 1 ? (
+            <form onSubmit={handleRequestOtp} className="space-y-6">
+              <div className="space-y-2.5">
+                <Label htmlFor="forgot-identifier" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  Phone Number / Email
+                </Label>
+                <Input 
+                  id="forgot-identifier" 
+                  value={identifier} 
+                  onChange={e => setIdentifier(e.target.value)} 
+                  required 
+                  className="h-14 rounded-2xl bg-muted/30 border-primary/5 focus:border-primary/20 transition-all font-medium"
+                />
+              </div>
+              <Button type="submit" className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 mt-4" disabled={requestOtpMutation.isPending}>
+                {requestOtpMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Send OTP"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleUpdatePassword} className="space-y-6">
+              <div className="space-y-2.5">
+                <Label htmlFor="forgot-otp" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">OTP</Label>
+                <Input 
+                  id="forgot-otp" 
+                  value={otp} 
+                  onChange={e => setOtp(e.target.value)} 
+                  required 
+                  className="h-14 rounded-2xl bg-muted/30 border-primary/5 focus:border-primary/20 transition-all font-medium tracking-widest text-center"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <Label htmlFor="forgot-new-password" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">New Password</Label>
+                <Input 
+                  id="forgot-new-password" 
+                  type="password" 
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)} 
+                  required 
+                  minLength={6}
+                  className="h-14 rounded-2xl bg-muted/30 border-primary/5 focus:border-primary/20 transition-all font-medium"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <Label htmlFor="forgot-confirm-password" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Confirm Password</Label>
+                <Input 
+                  id="forgot-confirm-password" 
+                  type="password" 
+                  value={confirmPassword} 
+                  onChange={e => setConfirmPassword(e.target.value)} 
+                  required 
+                  minLength={6}
+                  className="h-14 rounded-2xl bg-muted/30 border-primary/5 focus:border-primary/20 transition-all font-medium"
+                />
+              </div>
+              <Button type="submit" className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 mt-4" disabled={updatePasswordMutation.isPending}>
+                {updatePasswordMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Update Password"}
+              </Button>
+            </form>
+          )}
+
+          <div className="text-center text-sm font-medium text-muted-foreground">
+            Remember your password?{" "}
+            <button type="button" onClick={onSwitch} className="text-primary font-black hover:underline underline-offset-4">
+              Login here
+            </button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

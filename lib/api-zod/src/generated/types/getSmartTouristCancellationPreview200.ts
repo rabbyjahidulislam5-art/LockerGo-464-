@@ -5,11 +5,11 @@
  * Smart Tourist Locker Management API
  * OpenAPI spec version: 0.1.0
  */
-import type { BookingPreview } from './bookingPreview';
 
-export interface BookingOtpResponse {
-  otpId: string;
-  expiresAt: string;
+export type GetSmartTouristCancellationPreview200 = {
+  penaltyPercent: number;
+  penaltyAmount: number;
+  refundAmount: number;
+  paidAmount: number;
   message: string;
-  preview: BookingPreview;
-}
+};

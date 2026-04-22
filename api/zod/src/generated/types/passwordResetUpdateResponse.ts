@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AuditLog } from './auditLog';
-import type { Booking } from './booking';
+import type { UserProfile } from './userProfile';
 
-export interface BookingActionResponse {
-  booking: Booking;
+export interface PasswordResetUpdateResponse {
   message: string;
+  user: UserProfile;
   audit: AuditLog;
 }

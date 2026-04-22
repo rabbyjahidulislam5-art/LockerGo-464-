@@ -359,6 +359,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminDashboard"
+  /smart-tourist/password-reset/request-otp:
+    post:
+      operationId: requestPasswordResetOtp
+      tags: [smart-tourist]
+      summary: Request an OTP to reset user password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequestOtpRequest"
+      responses:
+        "200":
+          description: OTP sent to user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetOtpResponse"
+  /smart-tourist/password-reset/update:
+    post:
+      operationId: updatePasswordWithOtp
+      tags: [smart-tourist]
+      summary: Confirm OTP and update user password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetUpdateRequest"
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetUpdateResponse"
 components:
   schemas:
     HealthStatus:
@@ -796,3 +832,39 @@ components:
           items:
             $ref: "#/components/schemas/AuditLog"
       required: [metrics, bookings, users, receptionists, payments, auditLogs]
+    PasswordResetRequestOtpRequest:
+      type: object
+      properties:
+        identifier:
+          type: string
+      required: [identifier]
+    PasswordResetOtpResponse:
+      type: object
+      properties:
+        otpId:
+          type: string
+        expiresAt:
+          type: string
+        message:
+          type: string
+      required: [otpId, expiresAt, message]
+    PasswordResetUpdateRequest:
+      type: object
+      properties:
+        otpId:
+          type: string
+        otp:
+          type: string
+        newPassword:
+          type: string
+      required: [otpId, otp, newPassword]
+    PasswordResetUpdateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        audit:
+          $ref: "#/components/schemas/AuditLog"
+      required: [message, user, audit]

@@ -6,10 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ReceptionistProfile {
-  id: string;
-  name: string;
-  email: string;
-  stationId: string;
-  stationName: string;
+export interface PasswordResetOtpResponse {
+  otpId: string;
+  expiresAt: string;
+  message: string;
 }

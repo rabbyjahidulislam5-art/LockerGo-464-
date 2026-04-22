@@ -170,6 +170,17 @@ type OtpLog = {
 
 let otpLogs: OtpLog[] = [];
 
+type PasswordResetOtp = {
+  id: string;
+  userId: string;
+  otpHash: string;
+  expiresAt: string;
+  usedAt: string | null;
+  createdAt: string;
+};
+
+let passwordResetOtps: PasswordResetOtp[] = [];
+
 let auditLogs: Array<{
   id: string;
   actorRole: "public" | "user" | "receptionist" | "admin";
@@ -234,6 +245,7 @@ const databaseTables = {
   payments: "smart_tourist_payments",
   auditLogs: "smart_tourist_audit_logs",
   otpLogs: "smart_tourist_otp_logs",
+  passwordResetOtps: "smart_tourist_password_reset_otps",
 } as const;
 
 const storageReady = initializeStorage();
@@ -302,6 +314,7 @@ async function initializeStorage() {
       CREATE TABLE IF NOT EXISTS smart_tourist_payments (id TEXT PRIMARY KEY, data JSONB NOT NULL);
       CREATE TABLE IF NOT EXISTS smart_tourist_audit_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
       CREATE TABLE IF NOT EXISTS smart_tourist_otp_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+      CREATE TABLE IF NOT EXISTS smart_tourist_password_reset_otps (id TEXT PRIMARY KEY, data JSONB NOT NULL);
     `);
     console.log("[STORAGE] Tables ensured.");
   } catch (err) {
@@ -364,6 +377,7 @@ async function initializeStorage() {
   const storedPayments = await loadRows<(typeof payments)[number]>("payments");
   const storedAudits = await loadRows<(typeof auditLogs)[number]>("auditLogs");
   const storedOtps = await loadRows<OtpLog>("otpLogs");
+  const storedPasswordResetOtps = await loadRows<PasswordResetOtp>("passwordResetOtps");
 
   if (storedUsers.length > 0) {
     storedUsers.forEach(stored => {
@@ -396,6 +410,7 @@ async function initializeStorage() {
   bookings = storedBookings;
   payments = storedPayments;
   otpLogs = storedOtps;
+  passwordResetOtps = storedPasswordResetOtps;
 
   if (storedAudits.length > 0) auditLogs = storedAudits;
   else {
@@ -1013,6 +1028,69 @@ router.post("/smart-tourist/bookings", asyncRoute(async (req, res) => {
   const { booking, audit } = await createConfirmedBooking(body);
   notifyUpdate("BOOKING_CREATED", booking);
   res.json({ booking, message: "Booking created and synced to receptionist/admin panels.", audit });
+}));
+
+router.post("/smart-tourist/password-reset/request-otp", asyncRoute(async (req, res) => {
+  const { identifier } = req.body;
+  const user = users.find((item) => item.phone === identifier || item.email === identifier);
+  if (!user) throw new Error("User not found.");
+
+  const otp = makeOtp();
+  const resetOtp: PasswordResetOtp = {
+    id: `pwrotp-${nextId++}`,
+    userId: user.id,
+    otpHash: otpHash(otp),
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    usedAt: null,
+    createdAt: nowIso(),
+  };
+  passwordResetOtps.unshift(resetOtp);
+  await saveRow("passwordResetOtps", resetOtp.id, resetOtp);
+  
+  await sendUserEmail({ email: user.email, name: user.name }, "Password Reset OTP", [
+    `Your password reset OTP is: ${otp}`,
+    "This OTP expires in 10 minutes.",
+    "If you didn't request this, please ignore this email."
+  ]);
+  
+  res.json({
+    otpId: resetOtp.id,
+    expiresAt: resetOtp.expiresAt,
+    message: "Password reset OTP sent to your registered email."
+  });
+}));
+
+router.post("/smart-tourist/password-reset/update", asyncRoute(async (req, res) => {
+  const { otpId, otp, newPassword } = req.body;
+  
+  const resetOtp = passwordResetOtps.find(o => o.id === otpId);
+  if (!resetOtp || resetOtp.usedAt) throw new Error("Invalid or already used OTP.");
+  if (new Date(resetOtp.expiresAt).getTime() < Date.now()) throw new Error("OTP expired. Please request a new OTP.");
+  if (otpHash(otp) !== resetOtp.otpHash) throw new Error("Wrong OTP. Please try again.");
+  if (!newPassword || newPassword.length < 6) throw new Error("Password must be at least 6 characters long.");
+  
+  const userIndex = users.findIndex((item) => item.id === resetOtp.userId);
+  if (userIndex < 0) throw new Error("User not found.");
+  
+  resetOtp.usedAt = nowIso();
+  await saveRow("passwordResetOtps", resetOtp.id, resetOtp);
+  
+  users[userIndex] = { ...users[userIndex], password: newPassword } as any;
+  await saveRow("users", users[userIndex].id, users[userIndex]);
+  
+  const audit = addAudit("user", users[userIndex].name, "password_reset", "user", users[userIndex].id, "none", "Password reset successfully via OTP", null);
+  
+  await sendUserEmail({ email: users[userIndex].email, name: users[userIndex].name }, "Password Changed Successfully", [
+    "Your password was changed successfully.",
+    `Time: ${new Date().toLocaleString()}`,
+    "If you didn't make this change, please contact support immediately."
+  ]);
+  
+  res.json({
+    message: "Password updated successfully.",
+    user: users[userIndex],
+    audit
+  });
 }));
 
 router.post("/smart-tourist/bookings/otp/request", asyncRoute(async (req, res) => {
