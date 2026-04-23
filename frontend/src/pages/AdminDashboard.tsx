@@ -80,6 +80,7 @@ export default function AdminDashboard() {
   const { role, adminName } = useAuth();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeBookingSubTab, setActiveBookingSubTab] = useState<"active" | "history">("active");
@@ -142,6 +143,64 @@ export default function AdminDashboard() {
   const [paymentStationFilter, setPaymentStationFilter] = useState("all");
   const [paymentDayFilter, setPaymentDayFilter] = useState("");
   const [paymentMonthFilter, setPaymentMonthFilter] = useState("");
+
+  const [isAddTerminalOpen, setIsAddTerminalOpen] = useState(false);
+  const [isAddingTerminal, setIsAddingTerminal] = useState(false);
+  const [isDeletingTerminal, setIsDeletingTerminal] = useState<string | null>(null);
+  const [addTerminalData, setAddTerminalData] = useState({
+    stationName: "",
+    destinationId: "",
+    address: "",
+    receptionistName: "",
+    phone: "",
+    password: "station123",
+    lockerCount: 100
+  });
+
+  const handleAddTerminal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAddingTerminal(true);
+    try {
+      const res = await fetch("/api/smart-tourist/admin/stations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addTerminalData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to create terminal");
+      
+      toast({ title: "Success", description: "Terminal created successfully" });
+      setIsAddTerminalOpen(false);
+      setAddTerminalData({
+        stationName: "", destinationId: "", address: "", receptionistName: "", phone: "", password: "station123", lockerCount: 100
+      });
+      queryClient.invalidateQueries({ queryKey: getGetSmartTouristAdminDashboardQueryKey() });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsAddingTerminal(false);
+    }
+  };
+
+  const handleDeleteTerminal = async (stationId: string) => {
+    if (!confirm("Are you sure you want to permanently close this terminal and delete its receptionist and lockers? This action cannot be undone.")) return;
+    
+    setIsDeletingTerminal(stationId);
+    try {
+      const res = await fetch(`/api/smart-tourist/admin/stations/${stationId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to delete terminal");
+      
+      toast({ title: "Success", description: "Terminal deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: getGetSmartTouristAdminDashboardQueryKey() });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsDeletingTerminal(null);
+    }
+  };
 
   const { data: dashboard, isLoading: dashLoading } = useGetSmartTouristAdminDashboard({
     query: {
@@ -848,11 +907,67 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <LayoutDashboard className="h-5 w-5 text-primary" />
                   Station Receptionists ({dashboard.receptionists.length})
                 </CardTitle>
+                <Dialog open={isAddTerminalOpen} onOpenChange={setIsAddTerminalOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20 rounded-full font-bold">
+                      + Add Terminal
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md rounded-[2.5rem] glass-card p-8 border-white/20 shadow-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-black">Add New Terminal</DialogTitle>
+                      <DialogDescription>Create a new station, lockers, and receptionist account.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddTerminal} className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label>Station Name *</Label>
+                        <Input required value={addTerminalData.stationName} onChange={e => setAddTerminalData(prev => ({...prev, stationName: e.target.value}))} placeholder="e.g. Inani Beach Point" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Destination *</Label>
+                        <Select required value={addTerminalData.destinationId} onValueChange={val => setAddTerminalData(prev => ({...prev, destinationId: val}))}>
+                          <SelectTrigger><SelectValue placeholder="Select Destination" /></SelectTrigger>
+                          <SelectContent>
+                            {bootstrapData?.destinations?.map(d => (
+                              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Address *</Label>
+                        <Input required value={addTerminalData.address} onChange={e => setAddTerminalData(prev => ({...prev, address: e.target.value}))} placeholder="Station location details" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Receptionist Name *</Label>
+                        <Input required value={addTerminalData.receptionistName} onChange={e => setAddTerminalData(prev => ({...prev, receptionistName: e.target.value}))} placeholder="Full Name" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Phone (Optional)</Label>
+                          <Input value={addTerminalData.phone} onChange={e => setAddTerminalData(prev => ({...prev, phone: e.target.value}))} placeholder="Phone number" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Lockers *</Label>
+                          <Input type="number" required min="1" value={addTerminalData.lockerCount} onChange={e => setAddTerminalData(prev => ({...prev, lockerCount: parseInt(e.target.value)}))} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Initial Password *</Label>
+                        <Input required value={addTerminalData.password} onChange={e => setAddTerminalData(prev => ({...prev, password: e.target.value}))} />
+                      </div>
+                      <Button type="submit" className="w-full rounded-2xl" disabled={isAddingTerminal}>
+                        {isAddingTerminal ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                        Create Terminal
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -861,17 +976,29 @@ export default function AdminDashboard() {
                       <TableHead>Name</TableHead>
                       <TableHead>Station Assignment</TableHead>
                       <TableHead>Contact</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dashboard.receptionists.map(r => (
-                      <TableRow key={r.id} className="cursor-pointer hover:bg-primary/5 transition-colors" onClick={() => setSelectedReceptionist(r)}>
-                        <TableCell className="font-medium">{r.name}</TableCell>
-                        <TableCell>
+                      <TableRow key={r.id} className="hover:bg-primary/5 transition-colors">
+                        <TableCell className="font-medium cursor-pointer" onClick={() => setSelectedReceptionist(r)}>{r.name}</TableCell>
+                        <TableCell className="cursor-pointer" onClick={() => setSelectedReceptionist(r)}>
                           <div className="text-xs font-medium">{r.stationName}</div>
                           <div className="text-[10px] text-muted-foreground">{r.id}</div>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{r.email}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground cursor-pointer" onClick={() => setSelectedReceptionist(r)}>{r.email}</TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteTerminal(r.stationId); }}
+                            disabled={isDeletingTerminal === r.stationId}
+                          >
+                            {isDeletingTerminal === r.stationId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

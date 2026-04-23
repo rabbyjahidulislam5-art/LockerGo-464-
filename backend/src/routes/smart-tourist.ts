@@ -1662,6 +1662,126 @@ router.get("/smart-tourist/admin", asyncRoute(async (req, res) => {
   });
 }));
 
+router.post("/smart-tourist/admin/stations", asyncRoute(async (req, res) => {
+  const { stationName, destinationId, address, receptionistName, phone, password = "station123", lockerCount = 100 } = req.body;
+  
+  if (!stationName || !destinationId || !address || !receptionistName || !password) {
+    throw new Error("Missing required fields for terminal creation.");
+  }
+
+  // Generate IDs
+  const dest = destinations.find(d => d.id === destinationId);
+  if (!dest) throw new Error("Destination not found.");
+  
+  const slug = stationName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const stationId = `${destinationId}-${slug}`;
+  const receptionistId = `rec-${stationId}`;
+  const receptionistEmail = `${receptionistId}@smarttourist.bd`;
+
+  // Check if station exists
+  if (stations.some(s => s.id === stationId)) {
+    throw new Error("A station with a similar name already exists at this destination.");
+  }
+
+  // Create Station
+  const newStation = {
+    id: stationId,
+    destinationId,
+    name: stationName,
+    receptionistId,
+    totalLockers: lockerCount,
+    availableLockers: lockerCount,
+    bookedLockers: 0,
+    processingLockers: 0,
+    address
+  };
+
+  // Create Lockers
+  const newLockers = Array.from({ length: lockerCount }, (_, i) => ({
+    id: `${stationId}-l${i + 1}`,
+    stationId,
+    number: i + 1,
+    status: "available" as const,
+    nextAvailableAt: null,
+    partialAvailableHours: null
+  }));
+
+  // Create Receptionist
+  const newReceptionist = {
+    id: receptionistId,
+    name: receptionistName,
+    email: receptionistEmail,
+    stationId,
+    stationName,
+    phone: phone || "",
+    password
+  };
+
+  // Persist to DB
+  await pool.query(
+    `INSERT INTO stations (id, destination_id, name, receptionist_id, total_lockers, available_lockers, booked_lockers, processing_lockers, address) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [stationId, destinationId, stationName, receptionistId, lockerCount, lockerCount, 0, 0, address]
+  );
+
+  for (const locker of newLockers) {
+    await pool.query(
+      `INSERT INTO lockers (id, station_id, number, status) VALUES ($1, $2, $3, $4)`,
+      [locker.id, locker.stationId, locker.number, locker.status]
+    );
+  }
+
+  await saveRow("receptionists", newReceptionist.id, newReceptionist);
+
+  // Update Memory
+  stations.push(newStation as any);
+  lockers.push(...newLockers as any);
+  receptionists.push(newReceptionist);
+
+  // Audit
+  addAudit("admin", "Admin", "TERMINAL_CREATED", "station", stationId, {}, newStation, stationId);
+  
+  notifyUpdate("STATION_ADDED", { stationId });
+
+  res.json({ message: "Terminal created successfully", station: newStation, receptionist: newReceptionist });
+}));
+
+router.delete("/smart-tourist/admin/stations/:stationId", asyncRoute(async (req, res) => {
+  const { stationId } = req.params;
+  
+  const stationIndex = stations.findIndex(s => s.id === stationId);
+  if (stationIndex < 0) throw new Error("Station not found.");
+  const station = stations[stationIndex];
+
+  // Check active bookings
+  const activeBookings = bookings.filter(b => b.stationId === stationId && publicStatuses.has(b.status));
+  if (activeBookings.length > 0) {
+    throw new Error(`Cannot delete: ${activeBookings.length} active booking(s) exist at this terminal.`);
+  }
+
+  const receptionistIndex = receptionists.findIndex(r => r.stationId === stationId);
+  if (receptionistIndex < 0) throw new Error("Receptionist not found.");
+  const receptionist = receptionists[receptionistIndex];
+
+  // Delete from DB
+  await pool.query(`DELETE FROM lockers WHERE station_id = $1`, [stationId]);
+  await pool.query(`DELETE FROM smart_tourist_receptionists WHERE id = $1`, [receptionist.id]);
+  await pool.query(`DELETE FROM stations WHERE id = $1`, [stationId]);
+
+  // Update Memory
+  stations.splice(stationIndex, 1);
+  receptionists.splice(receptionistIndex, 1);
+  for (let i = lockers.length - 1; i >= 0; i--) {
+    if (lockers[i].stationId === stationId) lockers.splice(i, 1);
+  }
+
+  // Audit
+  addAudit("admin", "Admin", "TERMINAL_DELETED", "station", stationId, station, {}, stationId);
+  
+  notifyUpdate("STATION_DELETED", { stationId });
+
+  res.json({ message: "Terminal deleted successfully" });
+}));
+
 router.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const message = err instanceof Error ? err.message : "Smart Tourist request failed.";
   res.status(400).json({ message });
