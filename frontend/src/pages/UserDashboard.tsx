@@ -275,10 +275,6 @@ export default function UserDashboard() {
           </button>
           <span className="font-black text-lg tracking-tight">{sidebarLinks.find(l => l.id === activeTab)?.label}</span>
         </div>
-          <Button variant="outline" size="icon" className="rounded-2xl glass-card border-white/20 shadow-xl" onClick={() => window.dispatchEvent(new CustomEvent("smart-tourist-logout"))}>
-            <LogOut className="h-5 w-5 text-destructive" />
-          </Button>
-        </div>
 
         <div className="p-4 md:p-12 max-w-[1600px] mx-auto min-h-full space-y-12">
           {activeTab === "main" && (
