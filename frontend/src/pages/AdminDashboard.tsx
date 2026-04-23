@@ -509,9 +509,9 @@ export default function AdminDashboard() {
 
             <div className="flex items-center gap-6 glass-card p-4 rounded-3xl border-white/40 shadow-xl">
               <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-2xl border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden shadow-lg hover:z-10 transition-transform hover:scale-110">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 555}`} alt="Staff" />
+                {dashboard.receptionists.slice(0, 4).map((r) => (
+                  <div key={r.id} className="w-10 h-10 rounded-2xl border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden shadow-lg hover:z-10 transition-transform hover:scale-110">
+                    <img src={`https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(r.name)}`} alt={r.name} />
                   </div>
                 ))}
               </div>
@@ -519,7 +519,7 @@ export default function AdminDashboard() {
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Staff</p>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <p className="text-sm font-black">12 Terminals</p>
+                  <p className="text-sm font-black">{dashboard.receptionists.length} Terminals</p>
                 </div>
               </div>
             </div>
