@@ -34,7 +34,9 @@ import {
   ShieldCheck,
   AlertCircle,
   FileText,
-  Download
+  Download,
+  Menu,
+  X
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -79,6 +81,7 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeBookingSubTab, setActiveBookingSubTab] = useState<"active" | "history">("active");
   const [activePaymentTab, setActivePaymentTab] = useState<string>("all_transactions");
   const [activeAuditTab, setActiveAuditTab] = useState<"staff" | "booking" | "payment" | "review">("staff");
@@ -427,11 +430,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 xl:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+      )}
       <motion.aside 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        className="w-80 border-r border-white/40 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-3xl p-8 hidden xl:flex flex-col gap-6 shadow-2xl z-20"
+        className={`w-80 border-r border-white/40 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-3xl p-8 flex-col gap-6 shadow-2xl xl:relative ${sidebarOpen ? 'flex fixed top-0 left-0 h-full z-50 overflow-y-auto' : 'hidden xl:flex'}`}
       >
+        <div className="xl:hidden flex justify-end mb-2">
+          <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-xl hover:bg-primary/10 transition-colors">
+            <X className="h-5 w-5 text-muted-foreground" />
+          </button>
+        </div>
         <div className="space-y-2">
           <div className="px-4 mb-4">
             <h1 className="text-2xl font-black tracking-tighter">Command <span className="text-primary">Center</span></h1>
@@ -444,7 +455,7 @@ export default function AdminDashboard() {
               return (
                 <button
                   key={link.id}
-                  onClick={() => setActiveTab(link.id)}
+                  onClick={() => { setActiveTab(link.id); setSidebarOpen(false); }}
                   className={cn(
                     "w-full flex items-center gap-4 px-6 py-4 rounded-[1.5rem] transition-all duration-500 group relative",
                     isActive 
@@ -478,6 +489,12 @@ export default function AdminDashboard() {
       </motion.aside>
 
       <main className="flex-1 p-8 md:p-12 overflow-auto custom-scrollbar">
+        <div className="xl:hidden flex items-center gap-4 mb-8">
+          <button onClick={() => setSidebarOpen(true)} className="p-3 rounded-2xl glass-card border-white/20 shadow-xl hover:bg-primary/10 transition-colors">
+            <Menu className="h-6 w-6 text-primary" />
+          </button>
+          <span className="font-black text-lg tracking-tight">{sidebarLinks.find(l => l.id === activeTab)?.label}</span>
+        </div>
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>

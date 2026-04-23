@@ -29,7 +29,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, MapPin, XCircle, Key, LogOut, CreditCard, User, History, Search, AlertCircle, Star } from "lucide-react";
+import { Loader2, Clock, MapPin, XCircle, Key, LogOut, CreditCard, User, History, Search, AlertCircle, Star, Menu, X } from "lucide-react";
 import { cn, useRealtime, formatDateLocal, formatMonthLocal, getDateTimeLocal, formatDateTime } from "@/lib/utils";
 
 function DashboardSkeleton() {
@@ -61,6 +61,7 @@ export default function UserDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [bookingStation, setBookingStation] = useState<Station | null>(null);
   const [activeTab, setActiveTab] = useState<string>("main");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const handleReset = () => setActiveTab("main");
@@ -209,11 +210,19 @@ export default function UserDashboard() {
 
   return (
     <div className="flex min-h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 xl:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+      )}
       <motion.aside 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        className="w-80 border-r border-white/40 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-3xl p-8 hidden xl:flex flex-col gap-12 shadow-2xl z-20"
+        className={`w-80 border-r border-white/40 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-3xl p-8 flex-col gap-12 shadow-2xl xl:relative ${sidebarOpen ? 'flex fixed top-0 left-0 h-full z-50 overflow-y-auto' : 'hidden xl:flex'}`}
       >
+        <div className="xl:hidden flex justify-end mb-2">
+          <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-xl hover:bg-primary/10 transition-colors">
+            <X className="h-5 w-5 text-muted-foreground" />
+          </button>
+        </div>
         <div className="space-y-2">
           <div className="px-4 mb-8">
             <h1 className="text-2xl font-black tracking-tighter">Traveler <span className="text-primary">Hub</span></h1>
@@ -226,7 +235,7 @@ export default function UserDashboard() {
               return (
                 <button
                   key={link.id}
-                  onClick={() => setActiveTab(link.id)}
+                  onClick={() => { setActiveTab(link.id); setSidebarOpen(false); }}
                   className={cn(
                     "w-full flex items-center gap-4 px-6 py-4 rounded-[1.5rem] transition-all duration-500 group relative",
                     isActive 
@@ -260,7 +269,12 @@ export default function UserDashboard() {
       </motion.aside>
 
       <main className="flex-1 overflow-y-auto relative perspective-1000">
-        <div className="absolute top-8 right-8 z-50 xl:hidden">
+        <div className="xl:hidden flex items-center gap-4 p-4 pt-6">
+          <button onClick={() => setSidebarOpen(true)} className="p-3 rounded-2xl glass-card border-white/20 shadow-xl hover:bg-primary/10 transition-colors">
+            <Menu className="h-6 w-6 text-primary" />
+          </button>
+          <span className="font-black text-lg tracking-tight">{sidebarLinks.find(l => l.id === activeTab)?.label}</span>
+        </div>
           <Button variant="outline" size="icon" className="rounded-2xl glass-card border-white/20 shadow-xl" onClick={() => window.dispatchEvent(new CustomEvent("smart-tourist-logout"))}>
             <LogOut className="h-5 w-5 text-destructive" />
           </Button>
