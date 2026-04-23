@@ -147,6 +147,7 @@ export default function AdminDashboard() {
   const [isAddTerminalOpen, setIsAddTerminalOpen] = useState(false);
   const [isAddingTerminal, setIsAddingTerminal] = useState(false);
   const [isDeletingTerminal, setIsDeletingTerminal] = useState<string | null>(null);
+  const [terminalToDelete, setTerminalToDelete] = useState<any>(null);
   const [addTerminalData, setAddTerminalData] = useState({
     stationName: "",
     destinationId: "",
@@ -182,8 +183,9 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteTerminal = async (stationId: string) => {
-    if (!confirm("Are you sure you want to permanently close this terminal and delete its receptionist and lockers? This action cannot be undone.")) return;
+  const handleDeleteTerminal = async () => {
+    if (!terminalToDelete) return;
+    const stationId = terminalToDelete.stationId;
     
     setIsDeletingTerminal(stationId);
     try {
@@ -195,6 +197,7 @@ export default function AdminDashboard() {
       
       toast({ title: "Success", description: "Terminal deleted successfully" });
       queryClient.invalidateQueries({ queryKey: getGetSmartTouristAdminDashboardQueryKey() });
+      setTerminalToDelete(null);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -993,7 +996,7 @@ export default function AdminDashboard() {
                             variant="ghost" 
                             size="icon" 
                             className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteTerminal(r.stationId); }}
+                            onClick={(e) => { e.stopPropagation(); setTerminalToDelete(r); }}
                             disabled={isDeletingTerminal === r.stationId}
                           >
                             {isDeletingTerminal === r.stationId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -1005,6 +1008,26 @@ export default function AdminDashboard() {
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Delete Terminal Confirmation Modal */}
+            <Dialog open={!!terminalToDelete} onOpenChange={(open) => { if (!open) setTerminalToDelete(null); }}>
+              <DialogContent className="sm:max-w-md rounded-[2.5rem] glass-card p-8 border-white/20 shadow-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black text-red-500">Close Terminal?</DialogTitle>
+                  <DialogDescription className="text-sm font-medium">
+                    Are you sure you want to permanently close <strong>{terminalToDelete?.stationName}</strong>?
+                    This will delete its receptionist account and all associated lockers. This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex gap-4 mt-4 w-full">
+                  <Button variant="outline" className="flex-1 rounded-2xl" onClick={() => setTerminalToDelete(null)}>Cancel</Button>
+                  <Button variant="destructive" className="flex-1 rounded-2xl" onClick={handleDeleteTerminal} disabled={isDeletingTerminal === terminalToDelete?.stationId}>
+                    {isDeletingTerminal === terminalToDelete?.stationId ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                    Confirm Close
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* User Detail Modal */}
             <Dialog open={!!selectedUser} onOpenChange={(open) => { if (!open) setSelectedUser(null); }}>
