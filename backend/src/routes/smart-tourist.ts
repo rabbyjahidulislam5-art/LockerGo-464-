@@ -1738,7 +1738,13 @@ router.post("/smart-tourist/admin/stations", asyncRoute(async (req, res) => {
   receptionists.push(newReceptionist);
 
   // Audit
-  addAudit("admin", "Admin", "TERMINAL_CREATED", "station", stationId, {}, newStation, stationId);
+  const auditState = {
+    name: receptionistName,
+    email: receptionistEmail,
+    phone: phone || "N/A",
+    address: address
+  };
+  addAudit("admin", "Admin", "TERMINAL_CREATED", "receptionist", receptionistId, {}, auditState, stationId);
   
   notifyUpdate("STATION_ADDED", { stationId });
 
@@ -1775,7 +1781,13 @@ router.delete("/smart-tourist/admin/stations/:stationId", asyncRoute(async (req,
   }
 
   // Audit
-  addAudit("admin", "Admin", "TERMINAL_DELETED", "station", stationId, station, {}, stationId);
+  const auditState = {
+    name: receptionist.name,
+    email: receptionist.email,
+    phone: receptionist.phone || "N/A",
+    address: station.address
+  };
+  addAudit("admin", "Admin", "TERMINAL_DELETED", "receptionist", receptionist.id, auditState, {}, stationId);
   
   notifyUpdate("STATION_DELETED", { stationId });
 
