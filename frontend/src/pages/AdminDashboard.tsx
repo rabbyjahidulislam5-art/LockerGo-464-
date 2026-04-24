@@ -328,18 +328,54 @@ export default function AdminDashboard() {
 
       // 2. Deep enrichment from JSON (important for immutable history or deleted entities)
       try {
-        const newVal = JSON.parse(log.newValue || "{}");
-        const prevVal = JSON.parse(log.previousValue || "{}");
-        const target = (newVal && typeof newVal === 'object' && Object.keys(newVal).length > 0) ? newVal : prevVal;
+        const parseSafe = (val: string) => {
+          try {
+            const parsed = JSON.parse(val);
+            return (typeof parsed === 'object' && parsed !== null) ? parsed : {};
+          } catch {
+            return {};
+          }
+        };
+        const newVal = parseSafe(log.newValue);
+        const prevVal = parseSafe(log.previousValue);
+        
+        // Robust target selection: prioritize newVal for creations, otherwise check for user data
+        const hasUserData = (obj: any) => obj && (obj.userName || obj.name || obj.userPhone || obj.phone || obj.userEmail || obj.email);
+        const target = (log.actionType === "booking_created" || log.actionType === "booking_otp_sent") 
+          ? newVal 
+          : (hasUserData(newVal) ? newVal : prevVal);
         
         if (target && typeof target === 'object') {
           actorEmail = actorEmail || target.email || target.userEmail || target.actorEmail || "";
           actorPhone = actorPhone || target.phone || target.userPhone || target.actorPhone || "";
           actorAddress = actorAddress || target.address || target.userAddress || target.actorAddress || "";
-          userPhone = userPhone || target.userPhone || target.phone || "";
+          userPhone = userPhone || target.userPhone || target.phone || (target.user && target.user.phone) || "";
           lockerNumber = lockerNumber || target.lockerNumber?.toString() || target.number?.toString() || "";
           stationName = stationName || target.stationName || "";
           stationId = stationId || target.stationId || "";
+        }
+        
+        // robust status extraction for booking
+        if (log.entityType === "booking") {
+          (log as any).status = newVal.status || prevVal.status || "";
+        }
+
+        // Fallbacks
+        if (!lockerNumber && log.newValue?.includes("Locker:")) {
+          const match = log.newValue.match(/Locker:\s*(\d+)/i);
+          if (match) lockerNumber = match[1];
+        }
+        if (!stationName && log.newValue?.includes("Station:")) {
+          const match = log.newValue.match(/Station:\s*([^\n,]+)/i);
+          if (match) stationName = match[1];
+        }
+        if (!stationName && (log as any).stationName) stationName = (log as any).stationName;
+        if (!lockerNumber && (log as any).lockerNumber) lockerNumber = (log as any).lockerNumber;
+
+        // Try to map stationName to stationId if missing
+        if (stationName && !stationId) {
+          const station = dashboard.receptionists.find(r => r.stationName === stationName || r.stationId === stationName);
+          if (station) stationId = station.stationId;
         }
       } catch {}
 
@@ -378,9 +414,7 @@ export default function AdminDashboard() {
       result = result.filter(log => (log.lockerNumber || "").toString() === bookingLockerIdFilter);
     }
     if (bookingStatusFilter !== "all") {
-      result = result.filter(log => {
-        try { return JSON.parse(log.newValue)?.status === bookingStatusFilter; } catch { return false; }
-      });
+      result = result.filter(log => (log as any).status === bookingStatusFilter);
     }
     if (bookingDayFilter) result = result.filter(log => formatDateLocal(log.createdAt) === bookingDayFilter);
     if (bookingMonthFilter) result = result.filter(log => formatMonthLocal(log.createdAt) === bookingMonthFilter);
@@ -471,6 +505,53 @@ export default function AdminDashboard() {
       }
     } catch { return <span className="text-[10px] font-mono">{value}</span>; }
     return null;
+  };
+
+  const renderBookingState = (state: string, fallbackAction?: string) => {
+    const value = state?.toString()?.trim();
+    if (!value || value.toLowerCase() === 'none') {
+      if (!fallbackAction) return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
+      if (fallbackAction === 'booking_deleted' || fallbackAction === 'booking_cancelled') return <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-none shadow-none uppercase tracking-widest text-[10px]">Cancelled</Badge>;
+      return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
+    }
+    let statusStr = value;
+    try {
+      const obj = JSON.parse(value);
+      if (obj && obj.status) {
+        statusStr = obj.status;
+      }
+    } catch {}
+
+    statusStr = statusStr.replace(/_/g, ' ');
+
+    let color = "bg-primary text-white shadow-primary/20";
+    if (statusStr.includes('active')) color = "bg-emerald-500 text-white shadow-emerald-500/20";
+    if (statusStr.includes('key requested') || statusStr.includes('return requested')) color = "bg-amber-500 text-white shadow-amber-500/20";
+    if (statusStr.includes('completed')) color = "bg-slate-500 text-white shadow-slate-500/20";
+    if (statusStr.includes('cancelled') || statusStr.includes('deleted')) color = "bg-red-500 text-white shadow-red-500/20";
+    if (statusStr === 'Initial') color = "bg-transparent border border-muted-foreground/30 text-muted-foreground opacity-50";
+
+    return (
+      <Badge className={cn("rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-none shadow-lg whitespace-nowrap", color)}>
+        {statusStr}
+      </Badge>
+    );
+  };
+
+  const getBookingActionNarrative = (action: string, role: string) => {
+    const act = action.toLowerCase();
+    const r = role === 'receptionist' ? 'Receptionist' : (role === 'user' ? 'Traveler' : 'System');
+    
+    if (act === 'booking_created') return `Booking Created by ${r}`;
+    if (act === 'booking_updated') return `Booking Updated by ${r}`;
+    if (act === 'booking_cancelled' || act === 'booking_deleted') return `Booking Cancelled by ${r}`;
+    if (act === 'key_requested') return `Key Requested by ${r}`;
+    if (act === 'key_provided' || act === 'key_approved') return `Key Provided by ${r}`;
+    if (act === 'return_requested') return `Return Requested by ${r}`;
+    if (act === 'return_approved' || act === 'booking_completed') return `Completed/Returned by ${r}`;
+    if (act === 'booking_otp_sent') return `OTP Sent to ${r}`;
+    
+    return `${action.replace(/_/g, ' ')} by ${r}`;
   };
 
   const stats = [
@@ -1641,10 +1722,10 @@ export default function AdminDashboard() {
                           <TableRow key={log.id}>
                             <TableCell className="text-xs whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
                             <TableCell>
-                              <div className="font-medium text-xs">{log.actionType?.replace(/_/g, ' ')}</div>
-                              <Badge variant="secondary" className="text-[10px] h-4 mt-1">{log.actorRole}</Badge>
+                              <div className="font-bold text-xs text-primary">{getBookingActionNarrative(log.actionType, log.actorRole)}</div>
+                              <div className="text-[10px] text-muted-foreground mt-1 font-medium">By {log.actorName}</div>
                             </TableCell>
-                            <TableCell className="font-bold">#{lockerNumber || 'N/A'}</TableCell>
+                            <TableCell className="font-bold text-lg">#{lockerNumber || 'N/A'}</TableCell>
                             <TableCell>
                               <div className="space-y-0.5 text-[11px]">
                                 <div><span className="font-medium">Name:</span> {userName || 'N/A'}</div>
@@ -1654,13 +1735,13 @@ export default function AdminDashboard() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="text-xs font-medium">{stationName || 'N/A'}</div>
+                              <div className="text-xs font-bold uppercase tracking-tight">{stationName || 'N/A'}</div>
                             </TableCell>
-                            <TableCell className="text-[10px] font-mono max-w-[150px] overflow-hidden text-ellipsis">
-                              {renderState(log.previousValue)}
+                            <TableCell>
+                              {renderBookingState(log.previousValue)}
                             </TableCell>
-                            <TableCell className="text-[10px] font-mono max-w-[150px] overflow-hidden text-ellipsis">
-                              {renderState(log.newValue)}
+                            <TableCell>
+                              {renderBookingState(log.newValue, log.actionType)}
                             </TableCell>
                           </TableRow>
                         );
