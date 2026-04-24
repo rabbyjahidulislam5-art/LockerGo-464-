@@ -3153,12 +3153,12 @@ export default function AdminDashboard() {
 
                     {/* 4. Full Audit Trail */}
                     <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 p-10">
-                      <div className="flex items-center justify-between mb-8">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                         <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
                           <History className="h-4 w-4 text-primary" /> Provenance Logs
                         </h4>
                         <Select value={userForensicActionFilter} onValueChange={setUserForensicActionFilter}>
-                          <SelectTrigger className="w-[180px] rounded-2xl h-10 text-[10px] uppercase font-bold tracking-widest bg-muted/20 border-none">
+                          <SelectTrigger className="w-fit min-w-[150px] rounded-2xl h-10 px-4 text-[10px] uppercase font-bold tracking-widest bg-muted/20 border-none">
                             <SelectValue placeholder="Action Type" />
                           </SelectTrigger>
                           <SelectContent className="rounded-2xl border-none shadow-2xl">
@@ -3175,8 +3175,9 @@ export default function AdminDashboard() {
                         <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
                           {(() => {
                             const filteredLogs = userForensicData.audits.filter((log: any) => {
-                              // Only show user/staff related audits here (no bookings/payments)
-                              if (log.entityType?.toLowerCase() !== 'user' && log.entityType?.toLowerCase() !== 'staff') return false;
+                              // Only show user/staff/session related audits here (no bookings/payments)
+                              const type = log.entityType?.toLowerCase() || "";
+                              if (type !== 'user' && type !== 'staff' && type !== 'session') return false;
 
                               const actionLabel = log.actionType.toLowerCase();
                               if (userForensicActionFilter !== "all" && !actionLabel.includes(userForensicActionFilter)) return false;
