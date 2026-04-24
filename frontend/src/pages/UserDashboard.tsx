@@ -639,7 +639,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange, userId, onSu
   const duration = Math.max(1, parseInt(durationHours) || 1);
   const checkIn = new Date(checkInTime);
   const checkOut = new Date(checkIn.getTime() + duration * 60 * 60 * 1000);
-  const totalCost = duration * 50;
+  const totalCost = duration * (station?.pricePerHour || 50);
 
   const reset = () => {
     setSelectedLocker(null);
@@ -741,7 +741,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange, userId, onSu
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hourly Rent</Label>
-                    <div className="h-14 flex items-center px-6 rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 font-black text-xl">৳50.00</div>
+                    <div className="h-14 flex items-center px-6 rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 font-black text-xl">৳{(station?.pricePerHour || 50).toFixed(2)}</div>
                   </div>
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Total Due</Label>

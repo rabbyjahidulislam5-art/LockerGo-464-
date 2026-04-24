@@ -359,6 +359,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminDashboard"
+  /smart-tourist/stations/{stationId}/price:
+    patch:
+      operationId: updateStationPrice
+      tags: [smart-tourist]
+      summary: Admin updates station hourly price
+      parameters:
+        - name: stationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pricePerHour:
+                  type: number
+              required: [pricePerHour]
+      responses:
+        "200":
+          description: Price updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  station:
+                    $ref: "#/components/schemas/Station"
+                  message:
+                    type: string
+                required: [station, message]
   /smart-tourist/password-reset/request-otp:
     post:
       operationId: requestPasswordResetOtp
@@ -441,9 +475,11 @@ components:
           type: integer
         processingLockers:
           type: integer
+        pricePerHour:
+          type: number
         address:
           type: string
-      required: [id, destinationId, name, receptionistId, totalLockers, availableLockers, bookedLockers, processingLockers, address]
+      required: [id, destinationId, name, receptionistId, totalLockers, availableLockers, bookedLockers, processingLockers, pricePerHour, address]
     Locker:
       type: object
       properties:

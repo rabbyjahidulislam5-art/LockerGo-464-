@@ -292,7 +292,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange }: { station:
   const duration = Math.max(1, parseInt(durationHours) || 1);
   const checkIn = new Date(checkInTime);
   const checkOut = new Date(checkIn.getTime() + duration * 60 * 60 * 1000);
-  const totalCost = duration * 50;
+  const totalCost = duration * (station?.pricePerHour || 50);
 
   const reset = () => {
     setSelectedLocker(null);

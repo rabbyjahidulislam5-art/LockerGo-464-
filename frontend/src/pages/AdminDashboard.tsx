@@ -36,7 +36,8 @@ import {
   FileText,
   Download,
   Menu,
-  X
+  X,
+  Tag
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -99,6 +100,13 @@ export default function AdminDashboard() {
   
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedReceptionist, setSelectedReceptionist] = useState<any>(null);
+  
+  // Pricing state
+  const [pricingSearch, setPricingSearch] = useState("");
+  const [isUpdatePriceOpen, setIsUpdatePriceOpen] = useState(false);
+  const [selectedStationForPrice, setSelectedStationForPrice] = useState<any>(null);
+  const [newPriceValue, setNewPriceValue] = useState("");
+  const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
 
   const [staffNameFilter, setStaffNameFilter] = useState("");
   const [staffRoleFilter, setStaffRoleFilter] = useState<"all" | "admin" | "receptionist" | "user">("all");
@@ -202,6 +210,32 @@ export default function AdminDashboard() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setIsDeletingTerminal(null);
+    }
+  };
+
+  const handleUpdatePrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStationForPrice || !newPriceValue) return;
+    
+    setIsUpdatingPrice(true);
+    try {
+      const res = await fetch(`/api/smart-tourist/stations/${selectedStationForPrice.id}/price`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pricePerHour: Number(newPriceValue) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to update price");
+      
+      toast({ title: "Price Updated", description: `Successfully updated pricing for ${selectedStationForPrice.name}` });
+      setIsUpdatePriceOpen(false);
+      setSelectedStationForPrice(null);
+      setNewPriceValue("");
+      queryClient.invalidateQueries({ queryKey: getGetSmartTouristAdminDashboardQueryKey() });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUpdatingPrice(false);
     }
   };
 
@@ -680,6 +714,7 @@ export default function AdminDashboard() {
     { id: "bookings", label: "Operations", icon: ClipboardList },
     { id: "users", label: "Staff & Users", icon: Users },
     { id: "payments", label: "Financials", icon: CreditCard },
+    { id: "pricing", label: "Station Pricing", icon: Tag },
     { id: "audit", label: "Audit Engine", icon: History },
     { id: "reviews", label: "Reviews", icon: Star },
     { id: "reports", label: "Reports", icon: FileText },
@@ -1485,6 +1520,146 @@ export default function AdminDashboard() {
                 </Table>
               </CardContent>
             </Card>
+          </motion.div>
+        )}
+
+        {activeTab === "pricing" && (
+          <motion.div 
+            key="pricing"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-8"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <h3 className="text-3xl font-black tracking-tighter flex items-center gap-3">
+                  <Tag className="h-7 w-7 text-primary" /> Dynamic Station Pricing
+                </h3>
+                <p className="text-sm text-muted-foreground font-medium mt-1">
+                  Manage hourly rates for each terminal. Changes reflect instantly across all platforms.
+                </p>
+              </div>
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search Station or Destination..." 
+                  className="pl-11 rounded-2xl bg-white/50 border-white/20 shadow-inner"
+                  value={pricingSearch}
+                  onChange={e => setPricingSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <Card className="glass-card rounded-[2.5rem] border-white/20 shadow-2xl overflow-hidden">
+              <Table>
+                <TableHeader className="bg-primary/5">
+                  <TableRow>
+                    <TableHead className="px-8 py-6 font-black uppercase tracking-widest text-[10px]">Terminal Details</TableHead>
+                    <TableHead className="font-black uppercase tracking-widest text-[10px]">Destination</TableHead>
+                    <TableHead className="font-black uppercase tracking-widest text-[10px]">Current Rate</TableHead>
+                    <TableHead className="font-black uppercase tracking-widest text-[10px]">Locker Load</TableHead>
+                    <TableHead className="px-8 text-right font-black uppercase tracking-widest text-[10px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dashboard.receptionists
+                    .filter(r => 
+                      r.stationName.toLowerCase().includes(pricingSearch.toLowerCase()) || 
+                      (bootstrapData?.destinations?.find(d => d.id === r.stationId.split('-')[0])?.name || "").toLowerCase().includes(pricingSearch.toLowerCase())
+                    )
+                    .map(r => {
+                      const station = bootstrapData?.stations?.find(s => s.id === r.stationId);
+                      return (
+                        <TableRow key={r.id} className="group hover:bg-primary/5 transition-colors">
+                          <TableCell className="px-8 py-6">
+                            <div className="font-black text-base">{r.stationName}</div>
+                            <div className="text-[10px] text-muted-foreground font-mono uppercase mt-0.5">{r.stationId}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-white/40 dark:bg-black/20 border-white/40 font-bold">
+                              {bootstrapData?.destinations?.find(d => d.id === r.stationId.split('-')[0])?.name || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl font-black text-primary">৳{station?.pricePerHour || 50}</span>
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">/ Hour</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="text-sm font-bold">{station?.bookedLockers || 0} / {station?.totalLockers || 0}</div>
+                              <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary" 
+                                  style={{ width: `${((station?.bookedLockers || 0) / (station?.totalLockers || 1)) * 100}%` }} 
+                                />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-8 text-right">
+                            <Button 
+                              onClick={() => {
+                                setSelectedStationForPrice(station);
+                                setNewPriceValue(String(station?.pricePerHour || 50));
+                                setIsUpdatePriceOpen(true);
+                              }}
+                              className="rounded-xl font-black text-[10px] uppercase tracking-widest bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-lg"
+                            >
+                              Update Price
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </Card>
+
+            {/* Price Update Modal */}
+            <Dialog open={isUpdatePriceOpen} onOpenChange={setIsUpdatePriceOpen}>
+              <DialogContent className="sm:max-w-md rounded-[2.5rem] glass-card p-10 border-white/20 shadow-2xl">
+                <DialogHeader className="space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 mx-auto">
+                    <Tag className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <DialogTitle className="text-2xl font-black tracking-tight">Update Hourly Rate</DialogTitle>
+                    <DialogDescription className="font-bold text-primary opacity-60">
+                      {selectedStationForPrice?.name}
+                    </DialogDescription>
+                  </div>
+                </DialogHeader>
+                <form onSubmit={handleUpdatePrice} className="space-y-8 mt-6">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">New Hourly Price (BDT)</Label>
+                    <div className="relative">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-primary">৳</span>
+                      <Input 
+                        required 
+                        type="number" 
+                        min="1" 
+                        value={newPriceValue} 
+                        onChange={e => setNewPriceValue(e.target.value)}
+                        className="pl-14 h-20 rounded-2xl bg-white/50 border-2 border-primary/20 focus:border-primary text-3xl font-black shadow-inner"
+                      />
+                    </div>
+                    <p className="text-[10px] font-bold text-muted-foreground/60 text-center italic">
+                      This price will apply to all NEW bookings at this station instantly.
+                    </p>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button type="button" variant="outline" className="flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px]" onClick={() => setIsUpdatePriceOpen(false)}>Cancel</Button>
+                    <Button type="submit" className="flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-primary/20" disabled={isUpdatingPrice}>
+                      {isUpdatingPrice ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Apply New Rate
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </motion.div>
         )}
 

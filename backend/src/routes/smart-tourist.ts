@@ -89,6 +89,7 @@ let stations: Array<{
   availableLockers: number;
   bookedLockers: number;
   processingLockers: number;
+  pricePerHour: number;
   address: string;
 }> = [];
 
@@ -237,7 +238,11 @@ function formatMonthLocal(isoString: string): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
 }
-const amountFor = (hours: number) => hours * 50;
+const getAmountFor = (stationId: string, hours: number) => {
+  const station = stations.find(s => s.id === stationId);
+  const rate = station?.pricePerHour ?? 50;
+  return hours * rate;
+};
 const publicStatuses = new Set(["pending", "key_requested", "active", "return_requested", "overdue_due"]);
 const databaseTables = {
   users: "smart_tourist_users",
@@ -316,6 +321,8 @@ async function initializeStorage() {
       CREATE TABLE IF NOT EXISTS smart_tourist_audit_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
       CREATE TABLE IF NOT EXISTS smart_tourist_otp_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
       CREATE TABLE IF NOT EXISTS smart_tourist_password_reset_otps (id TEXT PRIMARY KEY, data JSONB NOT NULL);
+      -- Ensure stations table has price_per_hour column
+      ALTER TABLE stations ADD COLUMN IF NOT EXISTS price_per_hour NUMERIC DEFAULT 50;
     `);
     console.log("[STORAGE] Tables ensured.");
   } catch (err) {
@@ -339,7 +346,8 @@ async function initializeStorage() {
         ...s,
         availableLockers: s.availableLockers,
         bookedLockers: s.bookedLockers,
-        processingLockers: s.processingLockers
+        processingLockers: s.processingLockers,
+        pricePerHour: Number(s.pricePerHour || 50)
       }));
       
       stations.length = 0;
@@ -446,6 +454,7 @@ async function loadStationsFromDb() {
       available_lockers AS "availableLockers",
       booked_lockers AS "bookedLockers",
       processing_lockers AS "processingLockers",
+      price_per_hour AS "pricePerHour",
       address
     FROM stations
     ORDER BY destination_id, name
@@ -648,7 +657,7 @@ async function userDashboard(userId: string) {
       const extraHours = Math.ceil(overtimeMs / (60 * 60 * 1000));
       if (extraHours > 0) {
         b.status = "overdue_due";
-        b.dueAmount = amountFor(extraHours);
+        b.dueAmount = getAmountFor(b.stationId, extraHours);
         void saveRow("bookings", b.id, b);
       }
     }
@@ -873,8 +882,8 @@ async function createConfirmedBooking(body: BookingDraft) {
     actualCheckInTime: null,
     actualCheckOutTime: null,
     status: "pending",
-    amount: amountFor(body.durationHours),
-    paidAmount: amountFor(body.durationHours),
+    amount: getAmountFor(station.id, body.durationHours),
+    paidAmount: getAmountFor(station.id, body.durationHours),
     refundAmount: 0,
     penaltyPercent: 0,
     dueAmount: 0,
@@ -1131,7 +1140,7 @@ router.post("/smart-tourist/bookings/otp/request", asyncRoute(async (req, res) =
     `Check-in: ${checkIn.toLocaleString()}`,
     `Check-out: ${checkOut.toLocaleString()}`,
     `Duration: ${body.durationHours} hour(s)`,
-    `Total Cost: ৳${amountFor(body.durationHours)}`,
+    `Total Cost: ৳${getAmountFor(station.id, body.durationHours)}`,
   ]);
   addAudit("user", user.name, "booking_otp_sent", "otp", otpLog.id, "none", { stationId: station.id, lockerNumber }, station.id);
   res.json({
@@ -1322,7 +1331,7 @@ router.post("/smart-tourist/bookings/:bookingId/extend", asyncRoute(async (req, 
   const previous = { ...booking };
   booking.durationHours += body.extraHours;
   booking.checkOutTime = new Date(new Date(booking.checkOutTime).getTime() + body.extraHours * 60 * 60 * 1000).toISOString();
-  booking.dueAmount += amountFor(body.extraHours);
+  booking.dueAmount += getAmountFor(booking.stationId, body.extraHours);
   await saveRow("bookings", booking.id, booking);
   
   const user = users.find(u => u.id === booking.userId) || { name: booking.userName };
@@ -1383,7 +1392,7 @@ router.post("/smart-tourist/bookings/:bookingId/return-key", asyncRoute(async (r
   if (now > checkOut) {
     const overtimeMs = now - checkOut;
     const extraHours = Math.ceil(overtimeMs / (60 * 60 * 1000));
-    booking.dueAmount = amountFor(extraHours);
+    booking.dueAmount = getAmountFor(booking.stationId, extraHours);
     booking.status = "overdue_due";
     await saveRow("bookings", booking.id, booking);
     
@@ -1663,7 +1672,7 @@ router.get("/smart-tourist/admin", asyncRoute(async (req, res) => {
 }));
 
 router.post("/smart-tourist/admin/stations", asyncRoute(async (req, res) => {
-  const { stationName, destinationId, address, receptionistName, phone, password = "station123", lockerCount = 100 } = req.body;
+  const { stationName, destinationId, address, receptionistName, phone, password = "station123", lockerCount = 100, pricePerHour = 50 } = req.body;
   
   if (!stationName || !destinationId || !address || !receptionistName || !password) {
     throw new Error("Missing required fields for terminal creation.");
@@ -1693,6 +1702,7 @@ router.post("/smart-tourist/admin/stations", asyncRoute(async (req, res) => {
     availableLockers: lockerCount,
     bookedLockers: 0,
     processingLockers: 0,
+    pricePerHour: Number(pricePerHour),
     address
   };
 
@@ -1719,8 +1729,8 @@ router.post("/smart-tourist/admin/stations", asyncRoute(async (req, res) => {
 
   // Persist to DB
   await pool.query(
-    `INSERT INTO stations (id, destination_id, name, receptionist_id, total_lockers, available_lockers, booked_lockers, processing_lockers, address) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    [stationId, destinationId, stationName, receptionistId, lockerCount, lockerCount, 0, 0, address]
+    `INSERT INTO stations (id, destination_id, name, receptionist_id, total_lockers, available_lockers, booked_lockers, processing_lockers, address, price_per_hour) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [stationId, destinationId, stationName, receptionistId, lockerCount, lockerCount, 0, 0, address, Number(pricePerHour)]
   );
 
   for (const locker of newLockers) {
