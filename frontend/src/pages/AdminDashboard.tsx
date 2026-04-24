@@ -625,21 +625,7 @@ export default function AdminDashboard() {
     );
   };
 
-  const getBookingActionNarrative = (action: string, role: string) => {
-    const act = action.toLowerCase();
-    const r = role === 'receptionist' ? 'Receptionist' : (role === 'user' ? 'Traveler' : 'System');
-    
-    if (act === 'booking_created') return `Booking Created by ${r}`;
-    if (act === 'booking_updated') return `Booking Updated by ${r}`;
-    if (act === 'booking_cancelled' || act === 'booking_deleted') return `Booking Cancelled by ${r}`;
-    if (act === 'key_requested') return `Key Requested by ${r}`;
-    if (act === 'key_provided' || act === 'key_approved') return `Key Provided by ${r}`;
-    if (act === 'return_requested') return `Return Requested by ${r}`;
-    if (act === 'return_approved' || act === 'booking_completed') return `Completed/Returned by ${r}`;
-    if (act === 'booking_otp_sent') return `OTP Sent to ${r}`;
-    
-    return `${action.replace(/_/g, ' ')} by ${r}`;
-  };
+
 
   const stats = [
     { label: "Bookings", value: dashboard?.bookings?.length || 0, icon: ClipboardList, color: "text-blue-500", bg: "bg-blue-500/10", trend: "+8%" },
