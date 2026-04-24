@@ -791,7 +791,12 @@ async function receptionistDashboard(receptionistId: string) {
   };
 }
 
-function adminDashboard() {
+async function adminDashboard() {
+  const dbStations = await loadStationsFromDb();
+  // Ensure global stations is up to date for other functions that might use it
+  stations.length = 0;
+  stations.push(...dbStations as any);
+
   const enrichBooking = (b: Booking) => {
     const station = stations.find(s => s.id === b.stationId);
     const user = users.find(u => u.id === b.userId);
@@ -834,10 +839,8 @@ function adminDashboard() {
 
   const activeStations = stations.filter(s => !s.terminatedAt);
   const activeReceptionists = receptionists.filter(r => {
-    // Robust check: find station in the full list and ensure it's not terminated
     const s = stations.find(station => station.id === r.stationId);
-    if (!s) return false; // If station doesn't exist, don't show receptionist
-    return !s.terminatedAt;
+    return s && !s.terminatedAt;
   });
 
   return {
@@ -1665,7 +1668,7 @@ router.post("/smart-tourist/receptionist/action", asyncRoute(async (req, res) =>
 
 router.get("/smart-tourist/admin", asyncRoute(async (req, res) => {
   const { date, month, type } = req.query;
-  const dashboard = adminDashboard();
+  const dashboard = await adminDashboard();
   
   let filteredBookings = [...dashboard.bookings];
   let filteredAudits = [...dashboard.auditLogs];

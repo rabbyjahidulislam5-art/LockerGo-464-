@@ -864,7 +864,7 @@ export default function AdminDashboard() {
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Staff</p>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <p className="text-sm font-black">{dashboard.receptionists.length} Terminals (Active Only)</p>
+                  <p className="text-sm font-black">{dashboard.receptionists.length} Terminals</p>
                 </div>
               </div>
             </div>
@@ -1196,7 +1196,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <LayoutDashboard className="h-5 w-5 text-primary" />
-                  Live Station Staff ({dashboard.receptionists.length})
+                  Station Receptionists ({dashboard.receptionists.length})
                 </CardTitle>
                 <Dialog open={isAddTerminalOpen} onOpenChange={setIsAddTerminalOpen}>
                   <DialogTrigger asChild>
