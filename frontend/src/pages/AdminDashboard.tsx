@@ -3113,38 +3113,40 @@ export default function AdminDashboard() {
                       <h4 className="text-sm font-black uppercase tracking-[0.3em] mb-10 flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-400" /> Financial Audit
                       </h4>
-                      <div className="space-y-8 max-h-[400px] overflow-y-auto custom-scrollbar pr-4 pb-4">
-                        {(() => {
-                          const filteredPayments = userForensicData.payments.filter((p: any) => {
-                            if (userForensicMonthFilter && !formatMonthLocal(p.createdAt).includes(userForensicMonthFilter)) return false;
-                            if (userForensicDateFilter && !formatDateLocal(p.createdAt).includes(userForensicDateFilter)) return false;
-                            if (selectedForensicLocker) {
-                              const booking = userForensicData.bookings.find((b: any) => b.id === p.bookingId);
-                              if (!booking || `${booking.stationName}|${booking.lockerNumber}` !== selectedForensicLocker) return false;
-                            }
-                            return true;
-                          });
+                      <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-4 pb-4">
+                        <div className="space-y-8">
+                          {(() => {
+                            const filteredPayments = userForensicData.payments.filter((p: any) => {
+                              if (userForensicMonthFilter && !formatMonthLocal(p.createdAt).includes(userForensicMonthFilter)) return false;
+                              if (userForensicDateFilter && !formatDateLocal(p.createdAt).includes(userForensicDateFilter)) return false;
+                              if (selectedForensicLocker) {
+                                const booking = userForensicData.bookings.find((b: any) => b.id === p.bookingId);
+                                if (!booking || `${booking.stationName}|${booking.lockerNumber}` !== selectedForensicLocker) return false;
+                              }
+                              return true;
+                            });
 
-                          return (
-                            <>
-                              {filteredPayments.map((p: any) => (
-                                <div key={p.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/10">
-                                  <div className="absolute left-[-3px] top-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-                                  <div className="flex justify-between items-start">
-                                    <div className="space-y-0.5">
-                                      <p className="text-[8px] font-black uppercase text-white/40 tracking-widest">{formatDateTime(p.createdAt)}</p>
-                                      <p className="text-xs font-black uppercase tracking-tighter">{p.type.replace('_', ' ')}</p>
+                            return (
+                              <>
+                                {filteredPayments.map((p: any) => (
+                                  <div key={p.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/10">
+                                    <div className="absolute left-[-3px] top-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
+                                    <div className="flex justify-between items-start">
+                                      <div className="space-y-0.5">
+                                        <p className="text-[8px] font-black uppercase text-white/40 tracking-widest">{formatDateTime(p.createdAt)}</p>
+                                        <p className="text-xs font-black uppercase tracking-tighter">{p.type.replace('_', ' ')}</p>
+                                      </div>
+                                      <p className="text-sm font-black text-emerald-400">৳{p.amount}</p>
                                     </div>
-                                    <p className="text-sm font-black text-emerald-400">৳{p.amount}</p>
                                   </div>
-                                </div>
-                              ))}
-                              {filteredPayments.length === 0 && (
-                                <p className="text-[10px] font-bold text-white/40 italic">No historical transactions found.</p>
-                              )}
-                            </>
-                          );
-                        })()}
+                                ))}
+                                {filteredPayments.length === 0 && (
+                                  <p className="text-[10px] font-bold text-white/40 italic">No historical transactions found.</p>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </Card>
 
@@ -3153,68 +3155,70 @@ export default function AdminDashboard() {
                       <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
                         <History className="h-4 w-4 text-primary" /> Provenance Logs
                       </h4>
-                      <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10 max-h-[600px] overflow-y-auto custom-scrollbar pr-4 pb-4">
-                        {(() => {
-                          const filteredLogs = userForensicData.audits.filter((log: any) => {
-                            if (userForensicMonthFilter && !formatMonthLocal(log.createdAt).includes(userForensicMonthFilter)) return false;
-                            if (userForensicDateFilter && !formatDateLocal(log.createdAt).includes(userForensicDateFilter)) return false;
-                            if (selectedForensicLocker) {
-                              let bookingId = log.metadata?.bookingId || log.metadata?.booking_id;
-                              if (!bookingId && log.entityType === 'Booking') bookingId = log.entityId;
-                              if (bookingId) {
-                                const booking = userForensicData.bookings.find((b: any) => b.id === bookingId);
-                                if (!booking || `${booking.stationName}|${booking.lockerNumber}` !== selectedForensicLocker) return false;
-                              } else {
-                                // If it's a general user log (like login) but a specific locker is selected, hide it
-                                return false; 
+                      <div className="max-h-[500px] overflow-y-auto custom-scrollbar pr-4 pb-4">
+                        <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
+                          {(() => {
+                            const filteredLogs = userForensicData.audits.filter((log: any) => {
+                              if (userForensicMonthFilter && !formatMonthLocal(log.createdAt).includes(userForensicMonthFilter)) return false;
+                              if (userForensicDateFilter && !formatDateLocal(log.createdAt).includes(userForensicDateFilter)) return false;
+                              if (selectedForensicLocker) {
+                                let bookingId = log.metadata?.bookingId || log.metadata?.booking_id;
+                                if (!bookingId && log.entityType === 'Booking') bookingId = log.entityId;
+                                if (bookingId) {
+                                  const booking = userForensicData.bookings.find((b: any) => b.id === bookingId);
+                                  if (!booking || `${booking.stationName}|${booking.lockerNumber}` !== selectedForensicLocker) return false;
+                                } else {
+                                  // If it's a general user log (like login) but a specific locker is selected, hide it
+                                  return false; 
+                                }
                               }
-                            }
-                            return true;
-                          });
+                              return true;
+                            });
 
-                          return (
-                            <>
-                              {filteredLogs.map((log: any) => {
-                                const actionLabel = log.actionType.toLowerCase();
-                                let icon = <Activity className="h-4 w-4" />;
-                                let color = "bg-primary";
-                                let detail = log.details || "";
+                            return (
+                              <>
+                                {filteredLogs.map((log: any) => {
+                                  const actionLabel = log.actionType.toLowerCase();
+                                  let icon = <Activity className="h-4 w-4" />;
+                                  let color = "bg-primary";
+                                  let detail = log.details || "";
 
-                                if (actionLabel.includes('login')) { icon = <Activity className="h-4 w-4 text-emerald-500" />; color = "bg-emerald-500"; }
-                                if (actionLabel.includes('logout')) { icon = <LogOut className="h-4 w-4 text-slate-500" />; color = "bg-slate-500"; }
-                                if (actionLabel.includes('booking')) { icon = <Package className="h-4 w-4 text-blue-500" />; color = "bg-blue-500"; }
-                                if (actionLabel.includes('payment')) { icon = <DollarSign className="h-4 w-4 text-emerald-600" />; color = "bg-emerald-600"; }
-                                if (actionLabel.includes('penalty')) { icon = <AlertCircle className="h-4 w-4 text-red-500" />; color = "bg-red-500"; }
-                                if (actionLabel.includes('refund')) { icon = <DollarSign className="h-4 w-4 text-amber-500" />; color = "bg-amber-500"; }
-                                if (actionLabel.includes('profile')) { icon = <UserCircle className="h-4 w-4 text-indigo-500" />; color = "bg-indigo-500"; }
-                                if (actionLabel.includes('delete')) { icon = <Trash2 className="h-4 w-4 text-red-600" />; color = "bg-red-600"; }
+                                  if (actionLabel.includes('login')) { icon = <Activity className="h-4 w-4 text-emerald-500" />; color = "bg-emerald-500"; }
+                                  if (actionLabel.includes('logout')) { icon = <LogOut className="h-4 w-4 text-slate-500" />; color = "bg-slate-500"; }
+                                  if (actionLabel.includes('booking')) { icon = <Package className="h-4 w-4 text-blue-500" />; color = "bg-blue-500"; }
+                                  if (actionLabel.includes('payment')) { icon = <DollarSign className="h-4 w-4 text-emerald-600" />; color = "bg-emerald-600"; }
+                                  if (actionLabel.includes('penalty')) { icon = <AlertCircle className="h-4 w-4 text-red-500" />; color = "bg-red-500"; }
+                                  if (actionLabel.includes('refund')) { icon = <DollarSign className="h-4 w-4 text-amber-500" />; color = "bg-amber-500"; }
+                                  if (actionLabel.includes('profile')) { icon = <UserCircle className="h-4 w-4 text-indigo-500" />; color = "bg-indigo-500"; }
+                                  if (actionLabel.includes('delete')) { icon = <Trash2 className="h-4 w-4 text-red-600" />; color = "bg-red-600"; }
 
-                                return (
-                                  <div key={log.id} className="relative pl-8 group">
-                                    <div className={cn("absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white dark:border-slate-950 z-10 transition-transform group-hover:scale-125", color)} />
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{formatDateTime(log.createdAt)}</p>
-                                      <Badge className={cn("text-[8px] font-black uppercase tracking-tighter border-none text-white", color)}>
-                                        {log.actionType.replace('_', ' ')}
-                                      </Badge>
+                                  return (
+                                    <div key={log.id} className="relative pl-8 group">
+                                      <div className={cn("absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white dark:border-slate-950 z-10 transition-transform group-hover:scale-125", color)} />
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{formatDateTime(log.createdAt)}</p>
+                                        <Badge className={cn("text-[8px] font-black uppercase tracking-tighter border-none text-white", color)}>
+                                          {log.actionType.replace('_', ' ')}
+                                        </Badge>
+                                      </div>
+                                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-border/50 group-hover:border-primary/20 transition-colors">
+                                        <p className="text-xs font-bold leading-relaxed">{log.description || `System recorded ${log.actionType.toLowerCase()} on ${log.entityType} ${log.entityId}`}</p>
+                                        {log.metadata && (
+                                          <pre className="mt-2 text-[9px] font-mono text-muted-foreground bg-black/5 dark:bg-white/5 p-2 rounded-lg overflow-x-auto">
+                                            {JSON.stringify(log.metadata, null, 2)}
+                                          </pre>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-border/50 group-hover:border-primary/20 transition-colors">
-                                      <p className="text-xs font-bold leading-relaxed">{log.description || `System recorded ${log.actionType.toLowerCase()} on ${log.entityType} ${log.entityId}`}</p>
-                                      {log.metadata && (
-                                        <pre className="mt-2 text-[9px] font-mono text-muted-foreground bg-black/5 dark:bg-white/5 p-2 rounded-lg overflow-x-auto">
-                                          {JSON.stringify(log.metadata, null, 2)}
-                                        </pre>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                              {filteredLogs.length === 0 && (
-                                <p className="text-[10px] font-bold text-muted-foreground italic">No provenance logs found.</p>
-                              )}
-                            </>
-                          );
-                        })()}
+                                  );
+                                })}
+                                {filteredLogs.length === 0 && (
+                                  <p className="text-[10px] font-bold text-muted-foreground italic">No provenance logs found.</p>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </Card>
                   </div>
