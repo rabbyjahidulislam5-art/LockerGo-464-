@@ -3057,7 +3057,7 @@ export default function AdminDashboard() {
                         <div className="h-8 w-1 bg-primary rounded-full" />
                         <h3 className="text-xl font-black tracking-tight uppercase">Historical Booking Timeline</h3>
                       </div>
-                      <div className="space-y-6">
+                      <div className="space-y-6 max-h-[400px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         {userForensicData.bookings
                           .filter((b: any) => {
                             if (userForensicMonthFilter && !formatMonthLocal(b.createdAt).includes(userForensicMonthFilter)) return false;
@@ -3153,23 +3153,25 @@ export default function AdminDashboard() {
 
                     {/* 4. Full Audit Trail */}
                     <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 p-10">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                      <div className="flex flex-col gap-4 mb-8">
                         <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
                           <History className="h-4 w-4 text-primary" /> Provenance Logs
                         </h4>
-                        <Select value={userForensicActionFilter} onValueChange={setUserForensicActionFilter}>
-                          <SelectTrigger className="w-fit min-w-[150px] rounded-2xl h-10 px-4 text-[10px] uppercase font-bold tracking-widest bg-muted/20 border-none">
-                            <SelectValue placeholder="Action Type" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-2xl border-none shadow-2xl">
-                            <SelectItem value="all">All Actions</SelectItem>
-                            <SelectItem value="login">Login</SelectItem>
-                            <SelectItem value="logout">Logout</SelectItem>
-                            <SelectItem value="registration">Registration</SelectItem>
-                            <SelectItem value="profile">Profile Update</SelectItem>
-                            <SelectItem value="delete">Account Deleted</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div>
+                          <Select value={userForensicActionFilter} onValueChange={setUserForensicActionFilter}>
+                            <SelectTrigger className="w-[180px] rounded-2xl h-10 px-4 text-[10px] uppercase font-bold tracking-widest bg-muted/20 border-none">
+                              <SelectValue placeholder="Action Type" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl border-none shadow-2xl">
+                              <SelectItem value="all">All Actions</SelectItem>
+                              <SelectItem value="login">Login</SelectItem>
+                              <SelectItem value="logout">Logout</SelectItem>
+                              <SelectItem value="registration">Registration</SelectItem>
+                              <SelectItem value="profile">Profile Update</SelectItem>
+                              <SelectItem value="delete">Account Deleted</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       <div className="max-h-[500px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
