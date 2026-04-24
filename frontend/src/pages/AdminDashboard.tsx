@@ -390,7 +390,9 @@ export default function AdminDashboard() {
           const station = dashboard.receptionists.find(r => r.stationName === stationName || r.stationId === stationName);
           if (station) stationId = station.stationId;
         }
-      } catch {}
+      } catch (err) {
+        console.error("Enrichment error:", err);
+      }
 
       return {
         ...log,
@@ -405,8 +407,29 @@ export default function AdminDashboard() {
     });
   }, [dashboard]);
 
+  // Second pass for chronological history tracking (O(N) instead of O(N^2))
+  const chronologicalAuditLogs = useMemo(() => {
+    const logs = [...enrichedAuditLogs].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const latestLockerStates = new Map<string, string>();
+    
+    return logs.map(log => {
+      const locker = log.lockerNumber;
+      const actStr = (log.action || log.actionType || '').toLowerCase();
+      const isPay = actStr.includes('payment') || actStr.includes('penalty') || actStr.includes('refund') || actStr.includes('settlement');
+      
+      let chronologicalPrevValue = log.previousValue;
+      if (isPay && locker) {
+        if (!chronologicalPrevValue || String(chronologicalPrevValue).toLowerCase() === 'none' || chronologicalPrevValue === '{}') {
+          chronologicalPrevValue = latestLockerStates.get(locker) || log.previousValue;
+        }
+        latestLockerStates.set(locker, log.newValue);
+      }
+      return { ...log, chronologicalPrevValue };
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [enrichedAuditLogs]);
+
   const filteredStaffAudit = useMemo(() => {
-    let result = enrichedAuditLogs.filter(log => {
+    let result = chronologicalAuditLogs.filter(log => {
       const entity = String(log.entityType || '').toLowerCase();
       const action = String(log.actionType || '').toLowerCase();
       return ["user", "receptionist"].includes(entity) || ["login", "logout", "registration", "profile_update"].includes(action);
@@ -419,10 +442,10 @@ export default function AdminDashboard() {
     if (staffPhoneFilter) result = result.filter(log => (log.actorPhone || "").includes(staffPhoneFilter));
     if (staffAddressFilter) result = result.filter(log => (log.actorAddress || "").toLowerCase().includes(staffAddressFilter.toLowerCase()));
     return result;
-  }, [enrichedAuditLogs, staffRoleFilter, staffNameFilter, staffDayFilter, staffMonthFilter, staffEmailFilter, staffPhoneFilter, staffAddressFilter]);
+  }, [chronologicalAuditLogs, staffRoleFilter, staffNameFilter, staffDayFilter, staffMonthFilter, staffEmailFilter, staffPhoneFilter, staffAddressFilter]);
 
   const filteredBookingAudit = useMemo(() => {
-    let result = enrichedAuditLogs.filter(log => log.entityType === "booking");
+    let result = chronologicalAuditLogs.filter(log => log.entityType === "booking");
     if (bookingLockerIdFilter) {
       result = result.filter(log => (log.lockerNumber || "").toString() === bookingLockerIdFilter);
     }
@@ -441,10 +464,10 @@ export default function AdminDashboard() {
       result = result.filter(log => log.actorRole === bookingActorRoleFilter);
     }
     return result;
-  }, [enrichedAuditLogs, bookingLockerIdFilter, bookingStatusFilter, bookingDayFilter, bookingMonthFilter, bookingUserPhoneFilter, bookingStationFilter, bookingActorRoleFilter]);
+  }, [chronologicalAuditLogs, bookingLockerIdFilter, bookingStatusFilter, bookingDayFilter, bookingMonthFilter, bookingUserPhoneFilter, bookingStationFilter, bookingActorRoleFilter]);
 
   const filteredPaymentAudit = useMemo(() => {
-    let result = enrichedAuditLogs.filter(log => {
+    let result = chronologicalAuditLogs.filter(log => {
       const actionStr = (log.action || log.actionType || '').toLowerCase();
       return actionStr.includes('payment') || actionStr.includes('penalty') || actionStr.includes('refund') || actionStr.includes('settlement');
     });
@@ -478,14 +501,14 @@ export default function AdminDashboard() {
     if (paymentDayFilter) result = result.filter(log => formatDateLocal(log.createdAt) === paymentDayFilter);
     if (paymentMonthFilter) result = result.filter(log => formatMonthLocal(log.createdAt) === paymentMonthFilter);
     return result;
-  }, [enrichedAuditLogs, paymentTypeFilter, paymentUserPhoneFilter, paymentLockerFilter, paymentStationFilter, paymentDayFilter, paymentMonthFilter]);
+  }, [chronologicalAuditLogs, paymentTypeFilter, paymentUserPhoneFilter, paymentLockerFilter, paymentStationFilter, paymentDayFilter, paymentMonthFilter]);
 
   const filteredReviewAudit = useMemo(() => {
-    let result = enrichedAuditLogs.filter(log => log.entityType === "review");
+    let result = chronologicalAuditLogs.filter(log => log.entityType === "review");
     if (reviewDayFilter) result = result.filter(log => formatDateLocal(log.createdAt) === reviewDayFilter);
     if (reviewMonthFilter) result = result.filter(log => formatMonthLocal(log.createdAt) === reviewMonthFilter);
     return result;
-  }, [enrichedAuditLogs, reviewDayFilter, reviewMonthFilter]);
+  }, [chronologicalAuditLogs, reviewDayFilter, reviewMonthFilter]);
 
   useEffect(() => {
     if (role !== "admin" || !adminName) setLocation("/");
@@ -920,7 +943,7 @@ export default function AdminDashboard() {
                                 <div className="text-xs font-black">IN: {formatDateTime(booking.checkInTime)}</div>
                                 <div className="text-[10px] text-muted-foreground font-medium">EXP: {formatDateTime(booking.checkOutTime)}</div>
                               </TableCell>
-                              <TableCell className="font-black text-xl text-primary">৳{booking.amount?.toFixed(2)}</TableCell>
+                              <TableCell className="font-black text-xl text-primary">৳{Number(booking.amount || 0).toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
                                 <Badge className={cn(
                                   "rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-none shadow-lg",
@@ -1009,7 +1032,7 @@ export default function AdminDashboard() {
                                 <div className="text-[10px] text-muted-foreground">{item.destinationName}</div>
                               </TableCell>
                               <TableCell className="text-xs font-black uppercase tracking-tight">{formatDateTime(item.createdAt)}</TableCell>
-                              <TableCell className="font-black text-xl">৳{item.amount?.toFixed(2)}</TableCell>
+                              <TableCell className="font-black text-xl">৳{Number(item.amount || 0).toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
                                 <Badge variant="outline" className="rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-primary/20 text-primary">{item.status}</Badge>
                               </TableCell>
@@ -1424,7 +1447,7 @@ export default function AdminDashboard() {
                         <TableCell className="text-xs">{(payment as any).stationName}</TableCell>
                         <TableCell className="text-xs">{payment.reason}</TableCell>
                         <TableCell className="text-xs">{formatDateTime(payment.createdAt)}</TableCell>
-                        <TableCell className="text-right font-bold text-primary">৳{payment.amount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">৳{Number(payment.amount || 0).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     {filteredPayments.length === 0 && (
@@ -1437,7 +1460,7 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableCell colSpan={7} className="font-bold text-lg">Total Income (Filtered)</TableCell>
                       <TableCell className="text-right font-bold text-lg text-primary">
-                        ৳{filteredPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+                        ৳{Number(filteredPayments.reduce((sum, p) => sum + p.amount, 0)).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   </TableHeader>
@@ -1958,22 +1981,7 @@ export default function AdminDashboard() {
                             if (station) stationName = station.stationName;
                           }
 
-                          let chronologicalPrevValue = log.previousValue;
-                          if (!chronologicalPrevValue || String(chronologicalPrevValue).toLowerCase() === 'none' || chronologicalPrevValue === '{}') {
-                            if (lockerNumber) {
-                               const fullIndex = enrichedAuditLogs.findIndex(l => l.id === log.id);
-                               if (fullIndex !== -1) {
-                                  const prevLog = enrichedAuditLogs.slice(fullIndex + 1).find(l => {
-                                    const actStr = (l.action || l.actionType || '').toLowerCase();
-                                    const isPay = actStr.includes('payment') || actStr.includes('penalty') || actStr.includes('refund') || actStr.includes('settlement');
-                                    return isPay && (l.lockerNumber || "").toString() === lockerNumber.toString();
-                                  });
-                                  if (prevLog && prevLog.newValue && prevLog.newValue.toLowerCase() !== 'none') {
-                                     chronologicalPrevValue = prevLog.newValue;
-                                  }
-                               }
-                            }
-                          }
+                          const chronologicalPrevValue = (log as any).chronologicalPrevValue || log.previousValue;
                           
                         } catch (e) {
                           console.error("Error parsing audit log:", e);
