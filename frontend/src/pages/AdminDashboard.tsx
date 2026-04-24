@@ -324,6 +324,13 @@ export default function AdminDashboard() {
           stationName = b.stationName || "";
           stationId = stationId || b.stationId || "";
         }
+      } else if (log.entityType === "payment") {
+        const p = dashboard.payments.find(item => item.id === log.entityId);
+        if (p) {
+          userPhone = p.userPhone || "";
+          lockerNumber = p.lockerNumber?.toString() || "";
+          stationId = stationId || p.stationId || "";
+        }
       }
 
       // 2. Deep enrichment from JSON (important for immutable history or deleted entities)
@@ -358,6 +365,12 @@ export default function AdminDashboard() {
         // robust status extraction for booking
         if (log.entityType === "booking") {
           (log as any).status = newVal.status || prevVal.status || "";
+        }
+
+        // robust extraction for payment
+        if (log.entityType === "payment" || log.actionType?.includes('payment')) {
+          const targetAmt = newVal.amount !== undefined ? newVal : prevVal;
+          if (targetAmt.amount) (log as any).amount = targetAmt.amount;
         }
 
         // Fallbacks
@@ -486,30 +499,75 @@ export default function AdminDashboard() {
     return action.replace(/_/g, ' ').toUpperCase();
   };
 
-  const renderState = (state: string) => {
+  const renderCleanState = (state: string, isPrevious: boolean = false) => {
     const value = state?.toString()?.trim();
-    if (!value || value.toLowerCase() === 'none') return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
+    if (!value || value.toLowerCase() === 'none') {
+      return isPrevious ? <span className="text-muted-foreground/40 font-bold">—</span> : <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
+    }
     try {
       const obj = JSON.parse(value);
       if (typeof obj === 'object') {
+        const keys = Object.entries(obj).filter(([k, v]) => !['id', 'userId', 'bookingId', 'stationId', 'createdAt', 'updatedAt'].includes(k) && v !== null && v !== "");
+        if (keys.length === 0) return <span className="text-muted-foreground/40 font-bold">—</span>;
+        
         return (
-          <div className="space-y-1 bg-muted/20 p-2 rounded-lg border border-white/10">
-            {Object.entries(obj).filter(([k]) => !['id', 'userId', 'bookingId', 'stationId'].includes(k)).slice(0, 4).map(([k, v]) => (
-              <div key={k} className="text-[10px] flex justify-between gap-4">
-                <span className="font-black uppercase tracking-widest text-muted-foreground">{k}:</span>
-                <span className="font-bold truncate max-w-[100px]">{String(v)}</span>
+          <div className="flex flex-wrap gap-1.5 max-w-[180px]">
+            {keys.slice(0, 3).map(([k, v]) => (
+              <div key={k} className="flex items-center gap-1 bg-muted/50 rounded px-1.5 py-0.5 border border-border/50 text-[9px]">
+                <span className="text-muted-foreground uppercase">{k}:</span>
+                <span className="font-bold text-foreground truncate max-w-[80px]">{String(v)}</span>
               </div>
             ))}
+            {keys.length > 3 && <span className="text-[9px] text-muted-foreground">+{keys.length - 3} more</span>}
           </div>
         );
       }
-    } catch { return <span className="text-[10px] font-mono">{value}</span>; }
+    } catch { return <span className="text-[10px] truncate max-w-[150px] inline-block">{value}</span>; }
     return null;
   };
 
-  const renderBookingState = (state: string, fallbackAction?: string) => {
+  const renderPaymentState = (state: string, isPrevious: boolean = false) => {
     const value = state?.toString()?.trim();
     if (!value || value.toLowerCase() === 'none') {
+      return isPrevious ? <span className="text-muted-foreground/40 font-bold">—</span> : <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
+    }
+    
+    try {
+      const obj = JSON.parse(value);
+      if (obj && typeof obj === 'object') {
+        const type = obj.type || obj.TYPE || obj.actionType || "";
+        const amount = obj.amount || obj.AMOUNT || "";
+        const reason = obj.reason || obj.REASON || "";
+        
+        if (type || reason) {
+           let color = "bg-blue-500/10 text-blue-500";
+           if (type.includes('success') || type.includes('payment') || type.includes('pay')) color = "bg-emerald-500/10 text-emerald-500";
+           if (type.includes('refund')) color = "bg-amber-500/10 text-amber-500";
+           if (type.includes('penalty')) color = "bg-red-500/10 text-red-500";
+           
+           const typeStr = (type || "Transaction").replace(/_/g, ' ').toUpperCase();
+           
+           return (
+             <div className="flex flex-col gap-1">
+               <Badge className={cn("rounded px-2 py-0.5 text-[9px] uppercase tracking-wider border-none shadow-none w-fit", color)}>
+                 {typeStr}
+               </Badge>
+               {reason && <span className="text-[10px] text-muted-foreground truncate max-w-[140px]" title={reason}>{reason}</span>}
+               {amount && <span className="text-[10px] font-bold">৳{amount}</span>}
+             </div>
+           );
+        }
+      }
+    } catch {}
+    
+    // Fallback to clean state if no special type/reason found
+    return renderCleanState(state, isPrevious);
+  };
+
+  const renderBookingState = (state: string, fallbackAction?: string, isPrevious: boolean = false) => {
+    const value = state?.toString()?.trim();
+    if (!value || value.toLowerCase() === 'none') {
+      if (isPrevious) return <span className="text-muted-foreground/40 font-bold">—</span>;
       if (!fallbackAction) return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
       if (fallbackAction === 'booking_deleted' || fallbackAction === 'booking_cancelled') return <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-none shadow-none uppercase tracking-widest text-[10px]">Cancelled</Badge>;
       return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
@@ -1546,11 +1604,11 @@ export default function AdminDashboard() {
                             <div className="font-medium text-xs">{getActionText(log)}</div>
                             <div className="text-[10px] text-muted-foreground">{log.entityType} ({log.entityId.slice(0,8)}...)</div>
                           </TableCell>
-                          <TableCell className="text-[10px] font-mono max-w-xs overflow-hidden text-ellipsis">
-                            {renderState(log.previousValue)}
+                          <TableCell>
+                            {renderCleanState(log.previousValue, true)}
                           </TableCell>
-                          <TableCell className="text-[10px] font-mono max-w-xs overflow-hidden text-ellipsis">
-                            {renderState(log.newValue)}
+                          <TableCell>
+                            {renderCleanState(log.newValue, false)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1738,10 +1796,10 @@ export default function AdminDashboard() {
                               <div className="text-xs font-bold uppercase tracking-tight">{stationName || 'N/A'}</div>
                             </TableCell>
                             <TableCell>
-                              {renderBookingState(log.previousValue)}
+                              {renderBookingState(log.previousValue, undefined, true)}
                             </TableCell>
                             <TableCell>
-                              {renderBookingState(log.newValue, log.actionType)}
+                              {renderBookingState(log.newValue, log.actionType, false)}
                             </TableCell>
                           </TableRow>
                         );
@@ -1903,11 +1961,11 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-xs font-bold">#{lockerNumber || 'N/A'}</TableCell>
                             <TableCell className="text-xs">{stationName || 'N/A'}</TableCell>
-                            <TableCell className="text-[10px] font-mono max-w-[150px] overflow-hidden text-ellipsis">
-                              {renderState(log.previousValue)}
+                            <TableCell>
+                              {renderPaymentState(log.previousValue, true)}
                             </TableCell>
-                            <TableCell className="text-[10px] font-mono max-w-[150px] overflow-hidden text-ellipsis">
-                              {renderState(log.newValue)}
+                            <TableCell>
+                              {renderPaymentState(log.newValue, false)}
                             </TableCell>
                             <TableCell className="text-right font-bold text-primary">৳{amount.toFixed(2)}</TableCell>
                           </TableRow>
@@ -1985,11 +2043,11 @@ export default function AdminDashboard() {
                           <TableCell>
                             <div className="font-black text-xs text-primary">{log.actionType?.replace(/_/g, ' ').toUpperCase()}</div>
                           </TableCell>
-                          <TableCell className="text-[10px] font-mono max-w-[200px] overflow-hidden text-ellipsis">
-                            {renderState(log.previousValue)}
+                          <TableCell>
+                            {renderCleanState(log.previousValue, true)}
                           </TableCell>
-                          <TableCell className="text-[10px] font-mono max-w-[200px] overflow-hidden text-ellipsis">
-                            {renderState(log.newValue)}
+                          <TableCell>
+                            {renderCleanState(log.newValue, false)}
                           </TableCell>
                         </TableRow>
                       ))}
