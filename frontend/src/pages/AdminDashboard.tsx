@@ -1942,6 +1942,24 @@ export default function AdminDashboard() {
                             const station = dashboard.receptionists.find(r => r.stationId === log.stationId);
                             if (station) stationName = station.stationName;
                           }
+
+                          let chronologicalPrevValue = log.previousValue;
+                          if (!chronologicalPrevValue || chronologicalPrevValue.toLowerCase() === 'none' || chronologicalPrevValue === '{}') {
+                            if (lockerNumber) {
+                               const fullIndex = enrichedAuditLogs.findIndex(l => l.id === log.id);
+                               if (fullIndex !== -1) {
+                                  const prevLog = enrichedAuditLogs.slice(fullIndex + 1).find(l => {
+                                    const actStr = (l.action || l.actionType || '').toLowerCase();
+                                    const isPay = actStr.includes('payment') || actStr.includes('penalty') || actStr.includes('refund') || actStr.includes('settlement');
+                                    return isPay && (l.lockerNumber || "").toString() === lockerNumber.toString();
+                                  });
+                                  if (prevLog && prevLog.newValue && prevLog.newValue.toLowerCase() !== 'none') {
+                                     chronologicalPrevValue = prevLog.newValue;
+                                  }
+                               }
+                            }
+                          }
+                          
                         } catch (e) {
                           console.error("Error parsing audit log:", e);
                         }
@@ -1962,7 +1980,7 @@ export default function AdminDashboard() {
                             <TableCell className="text-xs font-bold">#{lockerNumber || 'N/A'}</TableCell>
                             <TableCell className="text-xs">{stationName || 'N/A'}</TableCell>
                             <TableCell>
-                              {renderPaymentState(log.previousValue, true)}
+                              {renderPaymentState(chronologicalPrevValue, true)}
                             </TableCell>
                             <TableCell>
                               {renderPaymentState(log.newValue, false)}
