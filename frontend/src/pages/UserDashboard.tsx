@@ -1006,6 +1006,13 @@ function UserProfileForm({ userId, user }: { userId: string, user: any }) {
   const [password, setPassword] = useState("");
   const { toast } = useToast();
   const updateProfile = useUpdateSmartTouristUserProfile();
+  const { logout } = useAuth();
+  
+  // Account Deletion State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"warning" | "otp">("warning");
+  const [deleteOtp, setDeleteOtp] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1018,6 +1025,44 @@ function UserProfileForm({ userId, user }: { userId: string, user: any }) {
         toast({ title: "Update Failed", description: err.message, variant: "destructive" });
       }
     });
+  };
+
+  const requestDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/smart-tourist/user/${userId}/delete-request`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to request deletion");
+      }
+      setDeleteStep("otp");
+      toast({ title: "Verification Sent", description: "Check your email for the deletion code." });
+    } catch (err: any) {
+      toast({ title: "Action Blocked", description: err.message, variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/smart-tourist/user/${userId}/delete-confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otp: deleteOtp })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Invalid code");
+      }
+      toast({ title: "Account Deleted", description: "Your data has been deactivated. Redirecting..." });
+      setTimeout(() => logout(), 2000);
+    } catch (err: any) {
+      toast({ title: "Deletion Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -1059,6 +1104,80 @@ function UserProfileForm({ userId, user }: { userId: string, user: any }) {
             {updateProfile.isPending ? <Loader2 className="h-8 w-8 animate-spin" /> : "Commit Profile Updates"}
           </Button>
         </form>
+
+        <div className="mt-16 pt-10 border-t border-destructive/10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 rounded-[2rem] bg-destructive/5 border border-destructive/10">
+            <div className="space-y-1 text-center md:text-left">
+              <h4 className="text-lg font-black text-destructive uppercase tracking-tighter">Danger Zone</h4>
+              <p className="text-xs font-bold text-muted-foreground">Permanently deactivate your account and erase active session access.</p>
+            </div>
+            <Dialog open={isDeleteModalOpen} onOpenChange={(open) => {
+              setIsDeleteModalOpen(open);
+              if (!open) {
+                setDeleteStep("warning");
+                setDeleteOtp("");
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-destructive/20">
+                  Delete Account
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md rounded-[2.5rem] glass-card p-10 border-white/20 shadow-2xl">
+                <DialogHeader className="space-y-4">
+                  <div className="h-16 w-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+                    <Trash2 className="h-8 w-8 text-destructive" />
+                  </div>
+                  <DialogTitle className="text-3xl font-black text-center tracking-tighter uppercase">
+                    {deleteStep === "warning" ? "Critical Action" : "Verify Identity"}
+                  </DialogTitle>
+                  <DialogDescription className="text-center font-bold text-muted-foreground">
+                    {deleteStep === "warning" 
+                      ? "Are you absolutely sure? This will deactivate your account and you will lose access to all active services. This cannot be undone." 
+                      : "We've sent a 6-digit verification code to your email. Enter it below to confirm permanent deletion."}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {deleteStep === "otp" && (
+                  <div className="space-y-4 py-6">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-destructive ml-2 text-center block w-full">Verification Code</Label>
+                    <Input 
+                      value={deleteOtp} 
+                      onChange={e => setDeleteOtp(e.target.value)} 
+                      placeholder="Enter 6-digit OTP" 
+                      className="h-16 rounded-2xl text-center text-3xl font-black tracking-[0.5em] bg-destructive/5 border-destructive/20 focus-visible:ring-destructive/20" 
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 mt-6">
+                  {deleteStep === "warning" ? (
+                    <Button 
+                      onClick={requestDelete} 
+                      disabled={isDeleting}
+                      variant="destructive" 
+                      className="h-16 rounded-2xl font-black text-lg uppercase tracking-widest"
+                    >
+                      {isDeleting ? <Loader2 className="h-6 w-6 animate-spin" /> : "I Understand, Send OTP"}
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={confirmDelete} 
+                      disabled={isDeleting || deleteOtp.length < 4}
+                      variant="destructive" 
+                      className="h-16 rounded-2xl font-black text-lg uppercase tracking-widest"
+                    >
+                      {isDeleting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Confirm Permanent Deletion"}
+                    </Button>
+                  )}
+                  <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)} className="rounded-xl font-bold">
+                    Cancel & Keep Account
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

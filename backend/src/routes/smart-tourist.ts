@@ -530,11 +530,13 @@ function addAudit(
   previousValue: unknown,
   newValue: unknown,
   stationId: string | null,
+  actorId?: string | null,
 ) {
   const audit = {
     id: `audit-${nextId++}`,
     actorRole,
     actorName,
+    actorId: actorId || (actorRole === "user" ? entityId : null), // Fallback for user actions
     actionType,
     entityType,
     entityId,
@@ -987,9 +989,9 @@ router.post("/smart-tourist/login", (req, res) => {
     return;
   }
   
-  const user = users.find((item) => item.phone === body.identifier || item.email === body.identifier);
+  const user = users.find((item) => (item.phone === body.identifier || item.email === body.identifier) && !(item as any).deletedAt);
   if (!user) {
-    throw new Error("User not found. Please register first.");
+    throw new Error("User not found or account deactivated. Please register first.");
   }
   if (user.password && user.password !== body.password) {
     throw new Error("Invalid password for user.");
@@ -1023,7 +1025,11 @@ router.post("/smart-tourist/register", asyncRoute(async (req, res) => {
   if (!body.password || body.password.length < 6) {
     throw new Error("Password must be at least 6 characters long.");
   }
-  const user = { id: `user-${nextId++}`, ...body };
+  const user = { 
+    id: `user-${nextId++}`, 
+    ...body,
+    createdAt: nowIso() // Ensure new users have a created timestamp
+  };
   users.unshift(user);
   await saveRow("users", user.id, user);
   addAudit("public", body.name, "registration", "user", user.id, "none", user, null);
@@ -1055,6 +1061,108 @@ router.patch("/smart-tourist/user/:userId", asyncRoute(async (req, res) => {
   ]);
   notifyUpdate("USER_UPDATED", users[index < 0 ? 0 : index]);
   res.json(await userDashboard(userId));
+}));
+
+router.post("/smart-tourist/user/:userId/delete-request", asyncRoute(async (req, res) => {
+  const { userId } = req.params;
+  const user = users.find(u => u.id === userId);
+  if (!user) throw new Error("User not found.");
+
+  // Check for active bookings
+  const activeBookings = bookings.filter(b => b.userId === userId && publicStatuses.has(b.status));
+  if (activeBookings.length > 0) {
+    throw new Error("Cannot delete account: You have active bookings. Please return your keys and complete your bookings first.");
+  }
+
+  const otp = makeOtp();
+  const hash = otpHash(otp);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins
+
+  otpLogs.unshift({
+    id: `otp-${nextId++}`,
+    userId,
+    email: user.email,
+    otpHash: hash,
+    bookingDraft: {} as any, // Dummy for deletion
+    expiresAt,
+    usedAt: null,
+    createdAt: nowIso()
+  });
+
+  await sendUserEmail(user, "Smart Locker System account deletion OTP", [
+    "You have requested to delete your account. This action is permanent.",
+    "If this was not you, please secure your account immediately.",
+    "",
+    `Your verification code is: ${otp}`,
+    "This code will expire in 10 minutes."
+  ]);
+
+  res.json({ message: "Verification code sent to your email." });
+}));
+
+router.post("/smart-tourist/user/:userId/delete-confirm", asyncRoute(async (req, res) => {
+  const { userId } = req.params;
+  const { otp } = req.body;
+  const user = users.find(u => u.id === userId);
+  if (!user) throw new Error("User not found.");
+
+  const log = otpLogs.find(l => l.userId === userId && l.otpHash === otpHash(otp) && !l.usedAt);
+  if (!log) throw new Error("Invalid or expired verification code.");
+  if (new Date(log.expiresAt).getTime() < Date.now()) throw new Error("Verification code has expired.");
+
+  log.usedAt = nowIso();
+  
+  // Soft delete
+  const now = nowIso();
+  (user as any).deletedAt = now;
+  await saveRow("users", userId, user);
+
+  addAudit("user", user.name, "account_deleted", "user", userId, { status: "active" }, { status: "deleted", deletedAt: now }, null);
+
+  await sendUserEmail(user, "Smart Locker System account deleted", [
+    "Your account has been successfully deactivated and deleted from our active user list.",
+    "Thank you for using our service.",
+    `Timestamp: ${new Date().toLocaleString()}`
+  ]);
+
+  res.json({ message: "Account deleted successfully." });
+}));
+
+router.get("/smart-tourist/admin/user-audit", asyncRoute(async (req, res) => {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  const enrichedUsers = users.map(u => {
+    const joinedDate = new Date(u.createdAt || Date.now());
+    return {
+      ...u,
+      isNew: joinedDate > oneMonthAgo,
+      isDeleted: !!(u as any).deletedAt
+    };
+  });
+
+  res.json(enrichedUsers);
+}));
+
+router.get("/smart-tourist/admin/forensics/user/:userId", asyncRoute(async (req, res) => {
+  const { userId } = req.params;
+  const user = users.find(u => u.id === userId);
+  if (!user) throw new Error("User not found.");
+
+  const userBookings = bookings.filter(b => b.userId === userId).map(b => {
+    const station = stations.find(s => s.id === b.stationId);
+    return { ...b, stationName: station?.name || b.stationName };
+  });
+
+  const userPayments = payments.filter(p => p.userId === userId || bookings.find(b => b.id === p.bookingId && b.userId === userId));
+  const userAudits = auditLogs.filter(a => a.entityType === "user" && a.entityId === userId || (a.actorRole === "user" && (a as any).actorId === userId));
+
+  res.json({
+    user,
+    bookings: userBookings,
+    payments: userPayments,
+    audits: userAudits
+  });
 }));
 
 router.post("/smart-tourist/bookings", asyncRoute(async (req, res) => {

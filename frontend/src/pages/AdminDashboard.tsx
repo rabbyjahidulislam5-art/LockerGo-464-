@@ -178,6 +178,18 @@ export default function AdminDashboard() {
   const [stationAuditList, setStationAuditList] = useState<any[]>([]);
   const [isStationAuditLoading, setIsStationAuditLoading] = useState(false);
 
+  const [userAuditSearch, setUserAuditSearch] = useState("");
+  const [userAuditFilter, setUserAuditFilter] = useState<"all" | "present" | "deleted">("all");
+  const [userAuditCategory, setUserAuditCategory] = useState<"all" | "new" | "old">("all");
+  const [userAuditList, setUserAuditList] = useState<any[]>([]);
+  const [isUserAuditLoading, setIsUserAuditLoading] = useState(false);
+  const [selectedUserAudit, setSelectedUserAudit] = useState<any>(null);
+  const [userForensicData, setUserForensicData] = useState<any>(null);
+  const [isUserForensicLoading, setIsUserForensicLoading] = useState(false);
+  const [userForensicMonthFilter, setUserForensicMonthFilter] = useState("");
+  const [userForensicDateFilter, setUserForensicDateFilter] = useState("");
+  const [isUserForensicModalOpen, setIsUserForensicModalOpen] = useState(false);
+
   const fetchStationAuditList = async () => {
     setIsStationAuditLoading(true);
     try {
@@ -204,9 +216,37 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchUserAuditList = async () => {
+    setIsUserAuditLoading(true);
+    try {
+      const res = await fetch("/api/smart-tourist/admin/user-audit");
+      const data = await res.json();
+      setUserAuditList(data);
+    } catch (err) {
+      console.error("Failed to fetch user audit list", err);
+    } finally {
+      setIsUserAuditLoading(false);
+    }
+  };
+
+  const fetchUserForensicData = async (userId: string) => {
+    setIsUserForensicLoading(true);
+    try {
+      const res = await fetch(`/api/smart-tourist/admin/forensics/user/${userId}`);
+      const data = await res.json();
+      setUserForensicData(data);
+    } catch (err) {
+      console.error("Failed to fetch user forensic data", err);
+    } finally {
+      setIsUserForensicLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "station-audit") {
       fetchStationAuditList();
+    } else if (activeTab === "user-audit") {
+      fetchUserAuditList();
     }
   }, [activeTab]);
 
@@ -769,6 +809,7 @@ export default function AdminDashboard() {
     { id: "pricing", label: "Station Pricing", icon: Tag },
     { id: "audit", label: "Audit Engine", icon: History },
     { id: "station-audit", label: "Station Audit", icon: ShieldCheck },
+    { id: "user-audit", label: "User Audit", icon: UserCircle },
     { id: "reviews", label: "Reviews", icon: Star },
     { id: "reports", label: "Reports", icon: FileText },
   ];
@@ -2695,6 +2736,198 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     )}
+            {activeTab === "user-audit" && (
+              <motion.div key="user-audit" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+                {/* Search and Filters */}
+                <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
+                  <div className="flex-1 w-full max-w-2xl space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4">Find Traveler</Label>
+                    <div className="relative group">
+                      <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                      <Input 
+                        placeholder="Search by name, phone or email..." 
+                        className="h-16 pl-14 pr-6 rounded-3xl border-none shadow-2xl bg-white dark:bg-slate-900/50 backdrop-blur-xl font-bold text-lg"
+                        value={userAuditSearch}
+                        onChange={(e) => setUserAuditSearch(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4">Audit Status</Label>
+                      <Select value={userAuditFilter} onValueChange={(v: any) => setUserAuditFilter(v)}>
+                        <SelectTrigger className="h-14 w-40 rounded-2xl border-none shadow-xl bg-white dark:bg-slate-900/50 font-black">
+                          <SelectValue placeholder="All Users" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-white/20 bg-white/80 backdrop-blur-xl">
+                          <SelectItem value="all">All Users</SelectItem>
+                          <SelectItem value="present">Active</SelectItem>
+                          <SelectItem value="deleted">Deleted</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4">Traveler Age</Label>
+                      <Select value={userAuditCategory} onValueChange={(v: any) => setUserAuditCategory(v)}>
+                        <SelectTrigger className="h-14 w-40 rounded-2xl border-none shadow-xl bg-white dark:bg-slate-900/50 font-black">
+                          <SelectValue placeholder="All Ages" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-white/20 bg-white/80 backdrop-blur-xl">
+                          <SelectItem value="all">All Time</SelectItem>
+                          <SelectItem value="new">New (≤1m)</SelectItem>
+                          <SelectItem value="old">Old (>1m)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
+                  {/* Left: User List */}
+                  <div className="xl:col-span-4 space-y-4">
+                    {isUserAuditLoading ? (
+                      <div className="flex flex-col items-center justify-center p-20 glass-card rounded-[3rem]">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Retrieving Identities...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
+                        {userAuditList
+                          .filter(u => {
+                            const search = userAuditSearch.toLowerCase();
+                            const matchesSearch = u.name.toLowerCase().includes(search) || 
+                                                u.phone.toLowerCase().includes(search) ||
+                                                (u.email && u.email.toLowerCase().includes(search));
+                            const matchesFilter = userAuditFilter === "all" || 
+                                                (userAuditFilter === "present" && !u.isDeleted) ||
+                                                (userAuditFilter === "deleted" && u.isDeleted);
+                            const matchesCategory = userAuditCategory === "all" ||
+                                                  (userAuditCategory === "new" && u.isNew) ||
+                                                  (userAuditCategory === "old" && !u.isNew);
+                            return matchesSearch && matchesFilter && matchesCategory;
+                          })
+                          .map(u => (
+                            <motion.div
+                              key={u.id}
+                              onClick={() => {
+                                setSelectedUserAudit(u);
+                                fetchUserForensicData(u.id);
+                              }}
+                              className={cn(
+                                "p-6 rounded-[2rem] cursor-pointer transition-all duration-300 border shadow-lg group",
+                                selectedUserAudit?.id === u.id 
+                                  ? "bg-primary text-white border-primary shadow-primary/20 scale-[1.02]" 
+                                  : "bg-white dark:bg-slate-900/50 border-white/20 hover:border-primary/50"
+                              )}
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-black text-lg tracking-tight truncate pr-4">{u.name}</h4>
+                                <div className="flex gap-2">
+                                  {u.isDeleted && <Badge className="bg-red-500/10 text-red-500 border-none font-black text-[8px] uppercase">Deleted</Badge>}
+                                  {u.isNew && <Badge className="bg-blue-500/10 text-blue-500 border-none font-black text-[8px] uppercase">New</Badge>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mb-4">
+                                <div className="w-1 h-3 bg-current/30 rounded-full" />
+                                <p className={cn("text-[10px] font-bold uppercase tracking-widest", selectedUserAudit?.id === u.id ? "text-white/70" : "text-muted-foreground")}>
+                                  {u.phone}
+                                </p>
+                              </div>
+                              <div className="flex items-center justify-between mt-auto pt-4 border-t border-current/10">
+                                <p className="text-[10px] font-black uppercase opacity-60">Joined: {formatDateLocal(u.createdAt)}</p>
+                                <UserCircle className="h-4 w-4 opacity-40" />
+                              </div>
+                            </motion.div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: User Overview */}
+                  <div className="xl:col-span-8">
+                    {selectedUserAudit ? (
+                      <div className="space-y-8">
+                        <Card className="rounded-[3rem] border-none shadow-2xl glass-card overflow-hidden">
+                          <CardHeader className="p-10 border-b border-white/10">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-6">
+                                <div className="h-20 w-20 rounded-[1.5rem] bg-primary flex items-center justify-center shadow-2xl shadow-primary/30">
+                                  <UserCircle className="h-12 w-12 text-white" />
+                                </div>
+                                <div>
+                                  <CardTitle className="text-4xl font-black tracking-tighter uppercase">{selectedUserAudit.name}</CardTitle>
+                                  <CardDescription className="font-bold text-primary opacity-60">Audit ID: {selectedUserAudit.id}</CardDescription>
+                                </div>
+                              </div>
+                              <Button 
+                                onClick={() => setIsUserForensicModalOpen(true)}
+                                className="rounded-2xl h-14 px-8 font-black text-sm uppercase tracking-widest shadow-2xl shadow-primary/20"
+                              >
+                                View Forensic Timeline
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-10">
+                            {isUserForensicLoading ? (
+                              <div className="py-20 flex flex-col items-center">
+                                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Scanning History...</p>
+                              </div>
+                            ) : userForensicData ? (
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="p-8 rounded-[2.5rem] bg-primary/5 space-y-2">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Total Bookings</p>
+                                  <p className="text-4xl font-black">{userForensicData.bookings.length}</p>
+                                </div>
+                                <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 space-y-2">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Total Contribution</p>
+                                  <p className="text-4xl font-black text-emerald-600">৳{userForensicData.payments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)}</p>
+                                </div>
+                                <div className="p-8 rounded-[2.5rem] bg-amber-500/5 space-y-2">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Audit Logs</p>
+                                  <p className="text-4xl font-black text-amber-600">{userForensicData.audits.length}</p>
+                                </div>
+                                
+                                <div className="md:col-span-3">
+                                  <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <Activity className="h-4 w-4 text-primary" /> Recent Activity
+                                  </h4>
+                                  <div className="space-y-4">
+                                    {userForensicData.audits.slice(0, 5).map((log: any) => (
+                                      <div key={log.id} className="flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-slate-900 border border-border/50">
+                                        <div className="flex items-center gap-4">
+                                          <div className="w-2 h-2 rounded-full bg-primary" />
+                                          <div>
+                                            <p className="text-xs font-black uppercase tracking-tighter">{log.actionType.replace('_', ' ')}</p>
+                                            <p className="text-[10px] font-bold text-muted-foreground">{formatDateTime(log.createdAt)}</p>
+                                          </div>
+                                        </div>
+                                        <Badge variant="outline" className="text-[8px] font-black uppercase border-primary/20 text-primary">{log.actorRole}</Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="py-20 text-center">
+                                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Select a traveler to analyze.</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center space-y-8 glass-card rounded-[4rem] border-dashed p-20">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full animate-pulse" />
+                          <UserCircle className="h-24 w-24 text-primary/40 relative z-10" />
+                        </div>
+                        <div className="max-w-md text-center">
+                          <h3 className="text-3xl font-black tracking-tight mb-3">Identity Audit Node</h3>
+                          <p className="text-sm font-medium text-muted-foreground leading-relaxed">Choose a traveler from the left to access their complete historical timeline, financial contributions, and provenance data.</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -2703,189 +2936,197 @@ export default function AdminDashboard() {
         </div>
       </main>
 
-      {/* Locker Forensic Modal */}
-      <Dialog open={isLockerForensicOpen} onOpenChange={setIsLockerForensicOpen}>
-        <DialogContent className="max-w-5xl rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 dark:bg-slate-950">
-          {isForensicLoading ? (
+      {/* User Forensic Modal */}
+      <Dialog open={isUserForensicModalOpen} onOpenChange={setIsUserForensicModalOpen}>
+        <DialogContent className="max-w-6xl rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 dark:bg-slate-950">
+          {isUserForensicLoading ? (
             <div className="h-[600px] flex flex-col items-center justify-center p-20">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-6" />
-              <p className="text-lg font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Consulting Core Archives...</p>
+              <p className="text-lg font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Scanning Bio-Digital Records...</p>
             </div>
-          ) : forensicData && (
-            <div className="flex flex-col h-[85vh]">
+          ) : userForensicData && (
+            <div className="flex flex-col h-[90vh]">
               {/* Modal Header */}
-              <div className="p-10 bg-primary text-white space-y-4">
+              <div className="p-12 bg-primary text-white space-y-4">
                 <div className="flex justify-between items-start">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <Badge className="bg-white/20 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Unit Forensic Node</Badge>
-                      <span className="text-white/60 font-bold text-xs uppercase tracking-widest">{selectedStationAudit?.name}</span>
+                      <Badge className="bg-white/20 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Identity Forensic Node</Badge>
+                      {selectedUserAudit.isDeleted && <Badge className="bg-red-500 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Deactivated Account</Badge>}
                     </div>
-                    <h2 className="text-5xl font-black tracking-tighter">Locker #{selectedLockerForensic?.number}</h2>
+                    <h2 className="text-6xl font-black tracking-tighter uppercase">{selectedUserAudit.name}</h2>
+                    <p className="text-white/60 font-black text-xs uppercase tracking-[0.2em]">{selectedUserAudit.phone} • {selectedUserAudit.email || "NO EMAIL"}</p>
                   </div>
                   <div className="text-right space-y-2">
                     <div className="flex flex-col sm:flex-row gap-3 justify-end items-center">
                       <div className="space-y-1 w-full sm:w-auto">
-                        <p className="text-[8px] font-black uppercase text-white/40 ml-1">Filter Month</p>
+                        <p className="text-[8px] font-black uppercase text-white/40 ml-1">Archive Month</p>
                         <Input 
                           type="month" 
                           className="h-11 w-full sm:w-44 bg-white/10 border-white/20 text-white font-bold rounded-2xl text-xs focus:bg-white/20 transition-all" 
-                          value={forensicMonthFilter}
-                          onChange={(e) => setForensicMonthFilter(e.target.value)}
+                          value={userForensicMonthFilter}
+                          onChange={(e) => setUserForensicMonthFilter(e.target.value)}
                         />
                       </div>
                       <div className="space-y-1 w-full sm:w-auto">
-                        <p className="text-[8px] font-black uppercase text-white/40 ml-1">Filter Date</p>
+                        <p className="text-[8px] font-black uppercase text-white/40 ml-1">Specific Date</p>
                         <Input 
                           type="date" 
                           className="h-11 w-full sm:w-44 bg-white/10 border-white/20 text-white font-bold rounded-2xl text-xs focus:bg-white/20 transition-all"
-                          value={forensicDateFilter}
-                          onChange={(e) => setForensicDateFilter(e.target.value)}
+                          value={userForensicDateFilter}
+                          onChange={(e) => setUserForensicDateFilter(e.target.value)}
                         />
                       </div>
+                      {(userForensicMonthFilter || userForensicDateFilter) && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setUserForensicMonthFilter("");
+                            setUserForensicDateFilter("");
+                          }}
+                          className="h-11 w-11 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 mt-3 sm:mt-0"
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      )}
                     </div>
-                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest italic pt-1 pr-1">Encrypted Ledger Access Granted</p>
+                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest italic pt-1 pr-1 italic">Authorized Forensic Access ONLY</p>
                   </div>
                 </div>
               </div>
 
-              {/* Modal Tabs */}
-              <div className="flex-1 overflow-auto p-10 custom-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                  {/* Main Content Area */}
-                  <div className="md:col-span-8 space-y-12">
-                    {/* 1. Bookings Timeline */}
-                    <section className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-1 bg-primary rounded-full" />
-                        <h3 className="text-xl font-black tracking-tight uppercase">Locker Booking Timeline (Audit)</h3>
+              {/* Modal Content Area */}
+              <div className="flex-1 overflow-auto p-12 custom-scrollbar">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                  {/* Left Column: Timeline & Grid */}
+                  <div className="lg:col-span-8 space-y-16">
+                    {/* 1. Terminal Usage Grid */}
+                    <section className="space-y-8">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-1 bg-blue-500 rounded-full" />
+                          <h3 className="text-xl font-black tracking-tight uppercase">Station Interactivity Grid</h3>
+                        </div>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{new Set(userForensicData.bookings.map((b: any) => b.stationName)).size} Terminals Utilized</p>
                       </div>
-                      <div className="space-y-4">
-                        {forensicData.bookings.length === 0 ? (
-                          <div className="p-10 text-center rounded-3xl bg-muted/50 border-dashed border-2 border-border">
-                            <p className="text-sm font-bold text-muted-foreground">No historical bookings found for this unit.</p>
-                          </div>
-                        ) : (
-                          forensicData.bookings
-                            .filter((b: any) => {
-                              if (forensicMonthFilter && !formatMonthLocal(b.createdAt).includes(forensicMonthFilter)) return false;
-                              if (forensicDateFilter && !formatDateLocal(b.createdAt).includes(forensicDateFilter)) return false;
-                              return true;
-                            })
-                            .map((booking: any) => (
-                            <div key={booking.id} className="p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-border/50 shadow-lg flex justify-between items-center group hover:border-primary/30 transition-colors">
-                              <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                  <UserCircle className="h-6 w-6 text-primary" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black">{booking.userName}</p>
-                                  <p className="text-[10px] font-black text-primary uppercase tracking-tighter">{booking.userPhone}</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xs font-black uppercase tracking-widest mb-1">{booking.status.replace('_', ' ')}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground">{formatDateTime(booking.createdAt)}</p>
-                              </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {Array.from(new Set(userForensicData.bookings.map((b: any) => `${b.stationName}|${b.lockerNumber}`))).map((pair, idx) => {
+                          const [stationName, lockerNumber] = pair.split('|');
+                          return (
+                            <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-border/50 shadow-sm text-center group hover:border-primary/30 transition-all">
+                              <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">{stationName}</p>
+                              <p className="text-lg font-black text-primary">Locker {lockerNumber}</p>
                             </div>
-                          ))
+                          );
+                        })}
+                        {userForensicData.bookings.length === 0 && (
+                          <div className="col-span-full py-10 text-center rounded-3xl bg-muted/20 border-dashed border-2 border-border">
+                            <p className="text-xs font-bold text-muted-foreground italic">No terminal interactions recorded.</p>
+                          </div>
                         )}
                       </div>
                     </section>
 
-                    {/* 2. Financial History */}
-                    <section className="space-y-6">
+                    {/* 2. Full Booking Timeline */}
+                    <section className="space-y-8">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-1 bg-emerald-500 rounded-full" />
-                        <h3 className="text-xl font-black tracking-tight uppercase">Financial Ledger</h3>
+                        <div className="h-8 w-1 bg-primary rounded-full" />
+                        <h3 className="text-xl font-black tracking-tight uppercase">Historical Booking Timeline</h3>
                       </div>
-                      <div className="space-y-4">
-                        {forensicData.payments.length === 0 ? (
-                          <div className="p-10 text-center rounded-3xl bg-muted/50 border-dashed border-2 border-border">
-                            <p className="text-sm font-bold text-muted-foreground">No financial records found.</p>
-                          </div>
-                        ) : (
-                          forensicData.payments
-                            .filter((p: any) => {
-                              if (forensicMonthFilter && !formatMonthLocal(p.createdAt).includes(forensicMonthFilter)) return false;
-                              if (forensicDateFilter && !formatDateLocal(p.createdAt).includes(forensicDateFilter)) return false;
-                              return true;
-                            })
-                            .map((payment: any) => (
-                            <div key={payment.id} className="p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-border/50 shadow-lg flex justify-between items-center">
-                              <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                  <CreditCard className="h-6 w-6 text-emerald-600" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black uppercase tracking-tighter truncate w-40">{payment.type.replace('_', ' ')}</p>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{payment.userName}</p>
-                                    <div className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-tighter">{payment.userPhone}</p>
+                      <div className="space-y-6">
+                        {userForensicData.bookings
+                          .filter((b: any) => {
+                            if (userForensicMonthFilter && !formatMonthLocal(b.createdAt).includes(userForensicMonthFilter)) return false;
+                            if (userForensicDateFilter && !formatDateLocal(b.createdAt).includes(userForensicDateFilter)) return false;
+                            return true;
+                          })
+                          .map((b: any) => (
+                            <div key={b.id} className="p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-border/50 shadow-xl group hover:border-primary transition-all overflow-hidden relative">
+                              <div className="absolute top-0 right-0 p-8 opacity-5">
+                                <Box className="h-16 w-16" />
+                              </div>
+                              <div className="flex flex-col md:flex-row justify-between gap-6">
+                                <div className="space-y-4">
+                                  <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge className="bg-primary/10 text-primary border-none font-black text-[8px] uppercase tracking-widest">{b.status.replace('_', ' ')}</Badge>
+                                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{formatDateTime(b.createdAt)}</span>
+                                    </div>
+                                    <h4 className="text-2xl font-black tracking-tighter">{b.stationName} — Unit {b.lockerNumber}</h4>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-8 pt-2">
+                                    <div>
+                                      <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Check-In Event</p>
+                                      <p className="text-xs font-black">{b.actualCheckInTime ? formatDateTime(b.actualCheckInTime) : (b.status === 'cancelled' ? 'N/A' : 'Pending')}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Return Event</p>
+                                      <p className="text-xs font-black">{b.actualCheckOutTime ? formatDateTime(b.actualCheckOutTime) : 'Ongoing'}</p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xl font-black text-emerald-600">৳{payment.amount}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground">{formatDateTime(payment.createdAt)}</p>
+                                <div className="md:text-right flex flex-col justify-between">
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground">Settlement Value</p>
+                                    <p className="text-3xl font-black text-primary">৳{b.amount}</p>
+                                  </div>
+                                  <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic pt-4">Locker Index: {b.lockerId}</p>
+                                </div>
                               </div>
                             </div>
-                          ))
-                        )}
+                        ))}
                       </div>
                     </section>
                   </div>
 
-                  {/* Sidebar Info Area */}
-                  <div className="md:col-span-4 space-y-8">
-                    {/* 3. Price Evolution */}
-                    <Card className="rounded-[2.5rem] border-none shadow-xl bg-primary/5 p-8">
-                      <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-primary" /> Price Evolution
+                  {/* Right Column: Payments & Audits */}
+                  <div className="lg:col-span-4 space-y-12">
+                    {/* 3. Financial Ledger */}
+                    <Card className="rounded-[3rem] border-none shadow-2xl bg-slate-900 text-white p-10 overflow-hidden relative">
+                      <div className="absolute top-0 right-0 p-8 opacity-10">
+                        <CreditCard className="h-20 w-20" />
+                      </div>
+                      <h4 className="text-sm font-black uppercase tracking-[0.3em] mb-10 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-400" /> Financial Audit
                       </h4>
-                      <div className="space-y-6 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/20">
-                        {forensicData.priceHistory.length === 0 ? (
-                          <p className="text-[10px] font-bold text-muted-foreground italic pl-6">No price adjustments logged for this terminal.</p>
-                        ) : (
-                          forensicData.priceHistory.map((audit: any, idx: number) => {
-                            const newVal = JSON.parse(audit.newValue || '{}');
-                            const prevVal = JSON.parse(audit.previousValue || '{}');
-                            return (
-                              <div key={audit.id} className="relative pl-8">
-                                <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-primary border-2 border-white dark:border-slate-950 z-10" />
-                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{formatDateTime(audit.createdAt)}</p>
-                                <p className="text-sm font-black">৳{prevVal.pricePerHour || '50'} → ৳{newVal.pricePerHour}</p>
-                                <div className="flex items-center gap-1.5 mt-1.5 p-1.5 px-3 rounded-lg bg-primary/10 border border-primary/20 w-fit">
-                                  <UserCircle className="h-3 w-3 text-primary" />
-                                  <p className="text-[9px] font-black text-primary uppercase tracking-widest">Adjusted by {audit.actorName}</p>
-                                </div>
+                      <div className="space-y-8">
+                        {userForensicData.payments.slice(0, 10).map((p: any) => (
+                          <div key={p.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/10">
+                            <div className="absolute left-[-3px] top-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-0.5">
+                                <p className="text-[8px] font-black uppercase text-white/40 tracking-widest">{formatDateTime(p.createdAt)}</p>
+                                <p className="text-xs font-black uppercase tracking-tighter">{p.type.replace('_', ' ')}</p>
                               </div>
-                            );
-                          })
+                              <p className="text-sm font-black text-emerald-400">৳{p.amount}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {userForensicData.payments.length === 0 && (
+                          <p className="text-[10px] font-bold text-white/40 italic">No historical transactions found.</p>
                         )}
                       </div>
                     </Card>
 
-                    {/* 4. Unit Info */}
-                    <Card className="rounded-[2.5rem] border-none shadow-xl bg-slate-900 text-white p-8 overflow-hidden relative">
-                      <div className="absolute top-0 right-0 p-8 opacity-10">
-                        <ShieldCheck className="h-24 w-24" />
-                      </div>
-                      <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-6">Unit Intelligence</h4>
-                      <div className="space-y-6">
-                        <div>
-                          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Status Code</p>
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-none font-black text-[10px] uppercase">{forensicData.lockerInfo.status}</Badge>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Terminal Affiliation</p>
-                          <p className="text-sm font-black">{selectedStationAudit?.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Audit Index</p>
-                          <p className="text-xs font-mono font-bold text-white/60">{forensicData.lockerInfo.id}</p>
-                        </div>
+                    {/* 4. Full Audit Trail */}
+                    <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 p-10">
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                        <History className="h-4 w-4 text-primary" /> Provenance Logs
+                      </h4>
+                      <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
+                        {userForensicData.audits.map((log: any) => (
+                          <div key={log.id} className="relative pl-8">
+                            <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-primary border-2 border-white dark:border-slate-950 z-10" />
+                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{formatDateTime(log.createdAt)}</p>
+                            <p className="text-xs font-black uppercase tracking-tighter">{log.actionType.replace('_', ' ')}</p>
+                            <div className="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border/50">
+                              <p className="text-[9px] font-bold text-muted-foreground leading-relaxed italic">
+                                Action recorded on {log.entityType} unit index {log.entityId}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </Card>
                   </div>
