@@ -3057,7 +3057,7 @@ export default function AdminDashboard() {
                         <div className="h-8 w-1 bg-primary rounded-full" />
                         <h3 className="text-xl font-black tracking-tight uppercase">Historical Booking Timeline</h3>
                       </div>
-                      <div className="space-y-6 max-h-[400px] overflow-y-auto custom-scrollbar pr-4 pb-4">
+                      <div className="space-y-6 max-h-[700px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         {userForensicData.bookings
                           .filter((b: any) => {
                             if (userForensicMonthFilter && !formatMonthLocal(b.createdAt).includes(userForensicMonthFilter)) return false;
