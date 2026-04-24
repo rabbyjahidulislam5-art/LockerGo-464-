@@ -3113,7 +3113,7 @@ export default function AdminDashboard() {
                       <h4 className="text-sm font-black uppercase tracking-[0.3em] mb-10 flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-400" /> Financial Audit
                       </h4>
-                      <div className="space-y-8">
+                      <div className="space-y-8 max-h-[400px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         {(() => {
                           const filteredPayments = userForensicData.payments.filter((p: any) => {
                             if (userForensicMonthFilter && !formatMonthLocal(p.createdAt).includes(userForensicMonthFilter)) return false;
@@ -3153,7 +3153,7 @@ export default function AdminDashboard() {
                       <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
                         <History className="h-4 w-4 text-primary" /> Provenance Logs
                       </h4>
-                      <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
+                      <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10 max-h-[600px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         {(() => {
                           const filteredLogs = userForensicData.audits.filter((log: any) => {
                             if (userForensicMonthFilter && !formatMonthLocal(log.createdAt).includes(userForensicMonthFilter)) return false;
