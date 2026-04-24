@@ -409,23 +409,41 @@ export default function AdminDashboard() {
 
   // Second pass for chronological history tracking (O(N) instead of O(N^2))
   const chronologicalAuditLogs = useMemo(() => {
-    const logs = [...enrichedAuditLogs].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    // Sort ascending for chain building. Use ID as fallback for same-second logs.
+    const logs = [...enrichedAuditLogs].sort((a, b) => {
+      const timeA = new Date(a.createdAt).getTime();
+      const timeB = new Date(b.createdAt).getTime();
+      if (timeA !== timeB) return timeA - timeB;
+      return String(a.id).localeCompare(String(b.id));
+    });
+
     const latestLockerStates = new Map<string, string>();
     
-    return logs.map(log => {
+    const processed = logs.map(log => {
       const locker = log.lockerNumber;
       const actStr = (log.action || log.actionType || '').toLowerCase();
       const isPay = actStr.includes('payment') || actStr.includes('penalty') || actStr.includes('refund') || actStr.includes('settlement');
       
       let chronologicalPrevValue = log.previousValue;
       if (isPay && locker) {
-        if (!chronologicalPrevValue || String(chronologicalPrevValue).toLowerCase() === 'none' || chronologicalPrevValue === '{}') {
-          chronologicalPrevValue = latestLockerStates.get(locker) || log.previousValue;
+        // ALWAYS use the tracked state from our map if we have one for this locker
+        const tracked = latestLockerStates.get(locker);
+        if (tracked) {
+          chronologicalPrevValue = tracked;
         }
+        // Update the map with the latest known state for this locker
         latestLockerStates.set(locker, log.newValue);
       }
       return { ...log, chronologicalPrevValue };
-    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    });
+
+    // Return descending for UI (newest first)
+    return processed.sort((a, b) => {
+      const timeA = new Date(a.createdAt).getTime();
+      const timeB = new Date(b.createdAt).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return String(b.id).localeCompare(String(a.id));
+    });
   }, [enrichedAuditLogs]);
 
   const filteredStaffAudit = useMemo(() => {
