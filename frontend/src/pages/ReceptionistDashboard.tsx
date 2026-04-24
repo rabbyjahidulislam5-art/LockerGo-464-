@@ -279,7 +279,10 @@ export default function ReceptionistDashboard() {
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-black tracking-tight truncate">{receptionist?.name}</p>
-              <Badge variant="outline" className="text-[8px] font-black uppercase bg-primary/5 text-primary border-primary/20">{dashboard.station.name}</Badge>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="text-[8px] font-black uppercase bg-primary/5 text-primary border-primary/20">{dashboard.station.name}</Badge>
+                <span className="text-[10px] font-black text-primary whitespace-nowrap">৳{Number(dashboard.station.pricePerHour || 50)}/hr</span>
+              </div>
             </div>
           </div>
           <Button variant="outline" className="w-full rounded-2xl font-black border-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-all shadow-xl" onClick={() => window.dispatchEvent(new CustomEvent("smart-tourist-logout"))}>
@@ -298,6 +301,11 @@ export default function ReceptionistDashboard() {
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="flex items-center gap-4 mb-2">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 font-black px-4 py-1 rounded-full uppercase tracking-widest text-[8px]">
+                  Station Rate: ৳{Number(dashboard.station.pricePerHour || 50)} / Hour
+                </Badge>
+              </div>
               <h2 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white mb-2">
                 {sidebarLinks.find(l => l.id === activeTab)?.label}
               </h2>
