@@ -2780,11 +2780,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div>
                                   <p className="text-sm font-black">{booking.userName}</p>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{booking.userId}</p>
-                                    <div className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-tighter">{booking.userPhone}</p>
-                                  </div>
+                                  <p className="text-[10px] font-black text-primary uppercase tracking-tighter">{booking.userPhone}</p>
                                 </div>
                               </div>
                               <div className="text-right">
