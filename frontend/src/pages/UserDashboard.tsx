@@ -590,7 +590,13 @@ function StationCard({ station, lockers, destinationName, onBook }: { station: S
               <MapPin className="h-3 w-3 text-primary" />
               <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">{destinationName}</span>
             </div>
-            <h3 className="text-2xl font-black tracking-tight mb-2 leading-tight">{station.name}</h3>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h3 className="text-2xl font-black tracking-tight leading-tight">{station.name}</h3>
+              <div className="text-right shrink-0">
+                <div className="text-xl font-black text-primary">৳{Number(station.pricePerHour || 50)}</div>
+                <div className="text-[8px] font-black uppercase tracking-widest text-muted-foreground -mt-1">/ Hour</div>
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">
               {station.address}
             </p>
