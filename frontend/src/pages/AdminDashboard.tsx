@@ -500,8 +500,8 @@ export default function AdminDashboard() {
   };
 
   const getPaymentActionNarrative = (action: string, role: string) => {
-    const act = action.toLowerCase();
-    const r = role === 'receptionist' ? 'Receptionist' : (role === 'user' ? 'Traveler' : 'System');
+    const act = (action || '').toLowerCase();
+    const r = (role === 'receptionist' ? 'Receptionist' : (role === 'user' ? 'Traveler' : 'System'));
     
     if (act.includes('refund')) return `Refund Issued by ${r}`;
     if (act.includes('penalty')) return `Penalty Charged by ${r}`;
@@ -509,7 +509,23 @@ export default function AdminDashboard() {
     if (act.includes('payment')) return `Payment by ${r}`;
     if (act.includes('due')) return `Due Payment by ${r}`;
     
-    return `${action.replace(/_/g, ' ')} by ${r}`;
+    return `${(action || 'Action').replace(/_/g, ' ')} by ${r}`;
+  };
+
+  const getBookingActionNarrative = (action: string, role: string) => {
+    const act = (action || '').toLowerCase();
+    const r = (role === 'receptionist' ? 'Receptionist' : (role === 'user' ? 'Traveler' : 'System'));
+    
+    if (act.includes('created')) return `Booking Created by ${r}`;
+    if (act.includes('requested')) return `Key Requested by ${r}`;
+    if (act.includes('provided')) return `Key Provided by ${r}`;
+    if (act.includes('active')) return `Booking Activated by ${r}`;
+    if (act.includes('completed')) return `Booking Completed by ${r}`;
+    if (act.includes('cancelled')) return `Booking Cancelled by ${r}`;
+    if (act.includes('deleted')) return `Booking Deleted by ${r}`;
+    if (act.includes('otp')) return `OTP Sent to ${r}`;
+    
+    return `${(action || 'Action').replace(/_/g, ' ')} by ${r}`;
   };
 
   const renderCleanState = (state: string, isPrevious: boolean = false) => {
