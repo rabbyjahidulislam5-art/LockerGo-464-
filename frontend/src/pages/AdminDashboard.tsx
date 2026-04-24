@@ -754,7 +754,7 @@ export default function AdminDashboard() {
                  {typeStr}
                </Badge>
                {reason && <span className="text-[10px] text-muted-foreground truncate max-w-[140px]" title={reason}>{reason}</span>}
-               {amount && <span className="text-[10px] font-bold">à§³{amount}</span>}
+               {amount && <span className="text-[10px] font-bold">৳{amount}</span>}
              </div>
            );
         }
@@ -802,7 +802,7 @@ export default function AdminDashboard() {
   const stats = [
     { label: "Bookings", value: dashboard?.bookings?.length || 0, icon: ClipboardList, color: "text-blue-500", bg: "bg-blue-500/10", trend: "+8%" },
     { label: "Travelers", value: dashboard?.users?.filter(u => !u.deletedAt).length || 0, icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "+12%" },
-    { label: "Revenue", value: `à§³${(dashboard?.payments || []).reduce((acc, p) => acc + (p.type?.includes('penalty') ? 0 : (p.amount || 0)), 0).toLocaleString()}`, icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+15%" },
+    { label: "Revenue", value: `৳${(dashboard?.payments || []).reduce((acc, p) => acc + (p.type?.includes('penalty') ? 0 : (p.amount || 0)), 0).toLocaleString()}`, icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+15%" },
     { label: "Security Logs", value: dashboard?.auditLogs?.length || 0, icon: History, color: "text-amber-500", bg: "bg-amber-500/10", trend: "Live" },
   ];
 
@@ -1095,7 +1095,7 @@ export default function AdminDashboard() {
                                 <div className="text-xs font-black">IN: {formatDateTime(booking.checkInTime)}</div>
                                 <div className="text-[10px] text-muted-foreground font-medium">EXP: {formatDateTime(booking.checkOutTime)}</div>
                               </TableCell>
-                              <TableCell className="font-black text-xl text-primary">à§³{Number(booking.amount || 0).toFixed(2)}</TableCell>
+                              <TableCell className="font-black text-xl text-primary">৳{Number(booking.amount || 0).toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
                                 <Badge className={cn(
                                   "rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-none shadow-lg",
@@ -1184,7 +1184,7 @@ export default function AdminDashboard() {
                                 <div className="text-[10px] text-muted-foreground">{item.destinationName}</div>
                               </TableCell>
                               <TableCell className="text-xs font-black uppercase tracking-tight">{formatDateTime(item.createdAt)}</TableCell>
-                              <TableCell className="font-black text-xl">à§³{Number(item.amount || 0).toFixed(2)}</TableCell>
+                              <TableCell className="font-black text-xl">৳{Number(item.amount || 0).toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
                                 <Badge variant="outline" className="rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-primary/20 text-primary">{item.status}</Badge>
                               </TableCell>
@@ -1470,7 +1470,7 @@ export default function AdminDashboard() {
                   <History className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">à§³{dashboard.payments.reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-xl font-bold">৳{dashboard.payments.reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1483,8 +1483,8 @@ export default function AdminDashboard() {
                   <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
-                  <div className="text-sm font-bold text-destructive">-à§³{dashboard.payments.filter(p => p.type === "40%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
-                  <div className="text-sm font-bold text-primary">+à§³{dashboard.payments.filter(p => p.type === "refund" && p.reason?.includes("40")).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-destructive">-৳{dashboard.payments.filter(p => p.type === "40%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-primary">+৳{dashboard.payments.filter(p => p.type === "refund" && p.reason?.includes("40")).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1497,8 +1497,8 @@ export default function AdminDashboard() {
                   <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
-                  <div className="text-sm font-bold text-destructive">-à§³{dashboard.payments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
-                  <div className="text-sm font-bold text-primary">+à§³{dashboard.payments.filter(p => p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100"))).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-destructive">-৳{dashboard.payments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-primary">+৳{dashboard.payments.filter(p => p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100"))).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1511,7 +1511,7 @@ export default function AdminDashboard() {
                   <ShieldCheck className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">à§³{dashboard.payments.filter(p => p.type === "successful_settlement" || p.type === "booking_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-xl font-bold">৳{dashboard.payments.filter(p => p.type === "successful_settlement" || p.type === "booking_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1524,7 +1524,7 @@ export default function AdminDashboard() {
                   <CreditCard className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">à§³{dashboard.payments.filter(p => p.type === "due_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-xl font-bold">৳{dashboard.payments.filter(p => p.type === "due_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
             </div>
@@ -1599,7 +1599,7 @@ export default function AdminDashboard() {
                         <TableCell className="text-xs">{(payment as any).stationName}</TableCell>
                         <TableCell className="text-xs">{payment.reason}</TableCell>
                         <TableCell className="text-xs">{formatDateTime(payment.createdAt)}</TableCell>
-                        <TableCell className="text-right font-bold text-primary">à§³{Number(payment.amount || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">৳{Number(payment.amount || 0).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     {filteredPayments.length === 0 && (
@@ -1612,7 +1612,7 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableCell colSpan={7} className="font-bold text-lg">Total Income (Filtered)</TableCell>
                       <TableCell className="text-right font-bold text-lg text-primary">
-                        à§³{Number(filteredPayments.reduce((sum, p) => sum + p.amount, 0)).toFixed(2)}
+                        ৳{Number(filteredPayments.reduce((sum, p) => sum + p.amount, 0)).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   </TableHeader>
@@ -1683,7 +1683,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span className="text-xl font-black text-primary">à§³{station?.pricePerHour || 50}</span>
+                              <span className="text-xl font-black text-primary">৳{station?.pricePerHour || 50}</span>
                               <span className="text-[10px] font-bold text-muted-foreground uppercase">/ Hour</span>
                             </div>
                           </TableCell>
@@ -1735,7 +1735,7 @@ export default function AdminDashboard() {
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">New Hourly Price (BDT)</Label>
                     <div className="relative">
-                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-primary">à§³</span>
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-primary">৳</span>
                       <Input 
                         required 
                         type="number" 
@@ -2301,7 +2301,7 @@ export default function AdminDashboard() {
                             <TableCell>
                               {renderPaymentState(log.newValue, false)}
                             </TableCell>
-                            <TableCell className="text-right font-bold text-primary">à§³{Number(amount || 0).toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-bold text-primary">৳{Number(amount || 0).toFixed(2)}</TableCell>
                           </TableRow>
                         );
                       })}
@@ -2459,7 +2459,7 @@ export default function AdminDashboard() {
                     return (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-primary/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Bookings</p><p className="text-xl font-black text-primary">{mb.length}</p></div>
-                        <div className="bg-emerald-500/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Revenue</p><p className="text-lg font-black text-emerald-600">à§³{mp.reduce((s,p)=>s+p.amount,0).toFixed(0)}</p></div>
+                        <div className="bg-emerald-500/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Revenue</p><p className="text-lg font-black text-emerald-600">৳{mp.reduce((s,p)=>s+p.amount,0).toFixed(0)}</p></div>
                       </div>
                     );
                   })()}
@@ -2638,7 +2638,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="text-center">
                                   <p className="text-[8px] font-black uppercase opacity-60">Price/hr</p>
-                                  <p className="text-sm font-black">à§³{Number(station.pricePerHour || 50)}</p>
+                                  <p className="text-sm font-black">৳{Number(station.pricePerHour || 50)}</p>
                                 </div>
                               </div>
                             </motion.div>
@@ -2682,7 +2682,7 @@ export default function AdminDashboard() {
                               </div>
                               <div className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10">
                                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Current Rate</p>
-                                <p className="text-3xl font-black tracking-tighter">à§³{selectedStationAudit.pricePerHour}</p>
+                                <p className="text-3xl font-black tracking-tighter">৳{selectedStationAudit.pricePerHour}</p>
                               </div>
                               <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10">
                                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Destination</p>
@@ -2890,7 +2890,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 space-y-2">
                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Total Contribution</p>
-                                  <p className="text-4xl font-black text-emerald-600">BDT {userForensicData.payments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)}</p>
+                                  <p className="text-4xl font-black text-emerald-600">৳{userForensicData.payments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)}</p>
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-amber-500/5 space-y-2">
                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Audit Logs</p>
@@ -3080,7 +3080,7 @@ export default function AdminDashboard() {
                                 <div className="md:text-right flex flex-col justify-between">
                                   <div className="space-y-1">
                                     <p className="text-[10px] font-black uppercase text-muted-foreground">Settlement Value</p>
-                                    <p className="text-3xl font-black text-primary">à§³{b.amount}</p>
+                                    <p className="text-3xl font-black text-primary">৳{b.amount}</p>
                                   </div>
                                   <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic pt-4">Locker Index: {b.lockerId}</p>
                                 </div>
@@ -3110,7 +3110,7 @@ export default function AdminDashboard() {
                                 <p className="text-[8px] font-black uppercase text-white/40 tracking-widest">{formatDateTime(p.createdAt)}</p>
                                 <p className="text-xs font-black uppercase tracking-tighter">{p.type.replace('_', ' ')}</p>
                               </div>
-                              <p className="text-sm font-black text-emerald-400">à§³{p.amount}</p>
+                              <p className="text-sm font-black text-emerald-400">৳{p.amount}</p>
                             </div>
                           </div>
                         ))}
