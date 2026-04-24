@@ -3358,7 +3358,7 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="text-xl font-black text-emerald-600">αº│{payment.amount}</p>
+                                <p className="text-xl font-black text-emerald-600">৳{payment.amount}</p>
                                 <p className="text-[10px] font-bold text-muted-foreground">{formatDateTime(payment.createdAt)}</p>
                               </div>
                             </div>
@@ -3386,7 +3386,7 @@ export default function AdminDashboard() {
                               <div key={audit.id} className="relative pl-8">
                                 <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-primary border-2 border-white dark:border-slate-950 z-10" />
                                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{formatDateTime(audit.createdAt)}</p>
-                                <p className="text-sm font-black">αº│{prevVal.pricePerHour || '50'} ΓåÆ αº│{newVal.pricePerHour}</p>
+                                <p className="text-sm font-black">৳{prevVal.pricePerHour || '50'} → ৳{newVal.pricePerHour}</p>
                                 <p className="text-[10px] font-bold text-muted-foreground mt-1">Adjusted by {audit.actorName}</p>
                               </div>
                             );
