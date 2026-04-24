@@ -1839,8 +1839,21 @@ router.get("/smart-tourist/admin/forensics/locker/:stationId/:lockerNumber", asy
   const { stationId, lockerNumber } = req.params;
   const num = parseInt(lockerNumber);
 
-  const lockerBookings = bookings.filter(b => b.stationId === stationId && b.lockerNumber === num);
-  const lockerPayments = payments.filter(p => p.stationId === stationId && lockerBookings.some(b => b.id === p.bookingId));
+  const lockerBookings = bookings
+    .filter(b => b.stationId === stationId && b.lockerNumber === num)
+    .map(b => {
+      const user = users.find(u => u.id === b.userId);
+      return { ...b, userPhone: user?.phone || "N/A" };
+    });
+
+  const lockerPayments = payments
+    .filter(p => p.stationId === stationId && lockerBookings.some(b => b.id === p.bookingId))
+    .map(p => {
+      const booking = lockerBookings.find(b => b.id === p.bookingId);
+      const user = users.find(u => u.id === p.userId);
+      return { ...p, userName: booking?.userName || user?.name || "Unknown", userPhone: user?.phone || "N/A" };
+    });
+
   const priceAudits = auditLogs.filter(log => log.stationId === stationId && (log.actionType === "STATION_PRICE_UPDATED" || log.actionType === "STATION_PRICE_SET"));
 
   res.json({

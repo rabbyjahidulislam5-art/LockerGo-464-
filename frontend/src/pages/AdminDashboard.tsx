@@ -2724,21 +2724,27 @@ export default function AdminDashboard() {
                     <h2 className="text-5xl font-black tracking-tighter">Locker #{selectedLockerForensic?.number}</h2>
                   </div>
                   <div className="text-right space-y-2">
-                    <div className="flex gap-2 justify-end">
-                      <Input 
-                        type="month" 
-                        className="h-10 w-40 bg-white/10 border-white/20 text-white font-bold rounded-xl text-xs" 
-                        value={forensicMonthFilter}
-                        onChange={(e) => setForensicMonthFilter(e.target.value)}
-                      />
-                      <Input 
-                        type="date" 
-                        className="h-10 w-40 bg-white/10 border-white/20 text-white font-bold rounded-xl text-xs"
-                        value={forensicDateFilter}
-                        onChange={(e) => setForensicDateFilter(e.target.value)}
-                      />
+                    <div className="flex flex-col sm:flex-row gap-3 justify-end items-center">
+                      <div className="space-y-1 w-full sm:w-auto">
+                        <p className="text-[8px] font-black uppercase text-white/40 ml-1">Filter Month</p>
+                        <Input 
+                          type="month" 
+                          className="h-11 w-full sm:w-44 bg-white/10 border-white/20 text-white font-bold rounded-2xl text-xs focus:bg-white/20 transition-all" 
+                          value={forensicMonthFilter}
+                          onChange={(e) => setForensicMonthFilter(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1 w-full sm:w-auto">
+                        <p className="text-[8px] font-black uppercase text-white/40 ml-1">Filter Date</p>
+                        <Input 
+                          type="date" 
+                          className="h-11 w-full sm:w-44 bg-white/10 border-white/20 text-white font-bold rounded-2xl text-xs focus:bg-white/20 transition-all"
+                          value={forensicDateFilter}
+                          onChange={(e) => setForensicDateFilter(e.target.value)}
+                        />
+                      </div>
                     </div>
-                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest italic">Encrypted Ledger Access Granted</p>
+                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest italic pt-1 pr-1">Encrypted Ledger Access Granted</p>
                   </div>
                 </div>
               </div>
@@ -2774,7 +2780,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div>
                                   <p className="text-sm font-black">{booking.userName}</p>
-                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{booking.userId}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{booking.userId}</p>
+                                    <div className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-tighter">{booking.userPhone}</p>
+                                  </div>
                                 </div>
                               </div>
                               <div className="text-right">
@@ -2813,7 +2823,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div>
                                   <p className="text-sm font-black uppercase tracking-tighter truncate w-40">{payment.type.replace('_', ' ')}</p>
-                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{payment.id}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{payment.userName}</p>
+                                    <div className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-tighter">{payment.userPhone}</p>
+                                  </div>
                                 </div>
                               </div>
                               <div className="text-right">
@@ -2846,7 +2860,10 @@ export default function AdminDashboard() {
                                 <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-primary border-2 border-white dark:border-slate-950 z-10" />
                                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{formatDateTime(audit.createdAt)}</p>
                                 <p className="text-sm font-black">৳{prevVal.pricePerHour || '50'} → ৳{newVal.pricePerHour}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-1">Adjusted by {audit.actorName}</p>
+                                <div className="flex items-center gap-1.5 mt-1.5 p-1.5 px-3 rounded-lg bg-primary/10 border border-primary/20 w-fit">
+                                  <UserCircle className="h-3 w-3 text-primary" />
+                                  <p className="text-[9px] font-black text-primary uppercase tracking-widest">Adjusted by {audit.actorName}</p>
+                                </div>
                               </div>
                             );
                           })
