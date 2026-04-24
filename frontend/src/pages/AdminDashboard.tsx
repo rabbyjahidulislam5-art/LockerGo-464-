@@ -224,14 +224,22 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pricePerHour: Number(newPriceValue) })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update price");
-      
-      toast({ title: "Price Updated", description: `Successfully updated pricing for ${selectedStationForPrice.name}` });
-      setIsUpdatePriceOpen(false);
-      setSelectedStationForPrice(null);
-      setNewPriceValue("");
-      queryClient.invalidateQueries({ queryKey: getGetSmartTouristAdminDashboardQueryKey() });
+
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to update price");
+        
+        toast({ title: "Price Updated", description: `Successfully updated pricing for ${selectedStationForPrice.name}` });
+        setIsUpdatePriceOpen(false);
+        setSelectedStationForPrice(null);
+        setNewPriceValue("");
+        queryClient.invalidateQueries({ queryKey: getGetSmartTouristAdminDashboardQueryKey() });
+      } else {
+        const errorText = await res.text();
+        console.error("Server Error Response:", errorText);
+        throw new Error(`Server is not ready (Error ${res.status}). Please wait for the Render backend to finish redeploying.`);
+      }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
