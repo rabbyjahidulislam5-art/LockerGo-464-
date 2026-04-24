@@ -1973,7 +1973,7 @@ export default function AdminDashboard() {
                           }
 
                           let chronologicalPrevValue = log.previousValue;
-                          if (!chronologicalPrevValue || chronologicalPrevValue.toLowerCase() === 'none' || chronologicalPrevValue === '{}') {
+                          if (!chronologicalPrevValue || String(chronologicalPrevValue).toLowerCase() === 'none' || chronologicalPrevValue === '{}') {
                             if (lockerNumber) {
                                const fullIndex = enrichedAuditLogs.findIndex(l => l.id === log.id);
                                if (fullIndex !== -1) {
@@ -2015,7 +2015,7 @@ export default function AdminDashboard() {
                             <TableCell>
                               {renderPaymentState(log.newValue, false)}
                             </TableCell>
-                            <TableCell className="text-right font-bold text-primary">৳{amount.toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-bold text-primary">৳{Number(amount || 0).toFixed(2)}</TableCell>
                           </TableRow>
                         );
                       })}
