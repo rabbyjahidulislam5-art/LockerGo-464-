@@ -3244,6 +3244,186 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Locker Forensic Modal */}
+      <Dialog open={isLockerForensicOpen} onOpenChange={setIsLockerForensicOpen}>
+        <DialogContent className="max-w-5xl rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 dark:bg-slate-950">
+          {isForensicLoading ? (
+            <div className="h-[600px] flex flex-col items-center justify-center p-20">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mb-6" />
+              <p className="text-lg font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Consulting Core Archives...</p>
+            </div>
+          ) : forensicData && (
+            <div className="flex flex-col h-[85vh]">
+              {/* Modal Header */}
+              <div className="p-10 bg-primary text-white space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-white/20 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Unit Forensic Node</Badge>
+                      <span className="text-white/60 font-bold text-xs uppercase tracking-widest">{selectedStationAudit?.name}</span>
+                    </div>
+                    <h2 className="text-5xl font-black tracking-tighter">Locker #{selectedLockerForensic?.number}</h2>
+                  </div>
+                  <div className="text-right space-y-2">
+                    <div className="flex gap-2 justify-end">
+                      <Input 
+                        type="month" 
+                        className="h-10 w-40 bg-white/10 border-white/20 text-white font-bold rounded-xl text-xs" 
+                        value={forensicMonthFilter}
+                        onChange={(e) => setForensicMonthFilter(e.target.value)}
+                      />
+                      <Input 
+                        type="date" 
+                        className="h-10 w-40 bg-white/10 border-white/20 text-white font-bold rounded-xl text-xs"
+                        value={forensicDateFilter}
+                        onChange={(e) => setForensicDateFilter(e.target.value)}
+                      />
+                    </div>
+                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest italic">Encrypted Ledger Access Granted</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Tabs */}
+              <div className="flex-1 overflow-auto p-10 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+                  {/* Main Content Area */}
+                  <div className="md:col-span-8 space-y-12">
+                    {/* 1. Bookings Timeline */}
+                    <section className="space-y-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-1 bg-primary rounded-full" />
+                        <h3 className="text-xl font-black tracking-tight uppercase">Booking Timeline</h3>
+                      </div>
+                      <div className="space-y-4">
+                        {forensicData.bookings.length === 0 ? (
+                          <div className="p-10 text-center rounded-3xl bg-muted/50 border-dashed border-2 border-border">
+                            <p className="text-sm font-bold text-muted-foreground">No historical bookings found for this unit.</p>
+                          </div>
+                        ) : (
+                          forensicData.bookings
+                            .filter((b: any) => {
+                              if (forensicMonthFilter && !formatMonthLocal(b.createdAt).includes(forensicMonthFilter)) return false;
+                              if (forensicDateFilter && !formatDateLocal(b.createdAt).includes(forensicDateFilter)) return false;
+                              return true;
+                            })
+                            .map((booking: any) => (
+                            <div key={booking.id} className="p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-border/50 shadow-lg flex justify-between items-center group hover:border-primary/30 transition-colors">
+                              <div className="flex items-center gap-5">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                  <UserCircle className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black">{booking.userName}</p>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{booking.userId}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs font-black uppercase tracking-widest mb-1">{booking.status.replace('_', ' ')}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground">{formatDateTime(booking.createdAt)}</p>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </section>
+
+                    {/* 2. Financial History */}
+                    <section className="space-y-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-1 bg-emerald-500 rounded-full" />
+                        <h3 className="text-xl font-black tracking-tight uppercase">Financial Ledger</h3>
+                      </div>
+                      <div className="space-y-4">
+                        {forensicData.payments.length === 0 ? (
+                          <div className="p-10 text-center rounded-3xl bg-muted/50 border-dashed border-2 border-border">
+                            <p className="text-sm font-bold text-muted-foreground">No financial records found.</p>
+                          </div>
+                        ) : (
+                          forensicData.payments
+                            .filter((p: any) => {
+                              if (forensicMonthFilter && !formatMonthLocal(p.createdAt).includes(forensicMonthFilter)) return false;
+                              if (forensicDateFilter && !formatDateLocal(p.createdAt).includes(forensicDateFilter)) return false;
+                              return true;
+                            })
+                            .map((payment: any) => (
+                            <div key={payment.id} className="p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-border/50 shadow-lg flex justify-between items-center">
+                              <div className="flex items-center gap-5">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                  <CreditCard className="h-6 w-6 text-emerald-600" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black uppercase tracking-tighter truncate w-40">{payment.type.replace('_', ' ')}</p>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{payment.id}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xl font-black text-emerald-600">αº│{payment.amount}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground">{formatDateTime(payment.createdAt)}</p>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </section>
+                  </div>
+
+                  {/* Sidebar Info Area */}
+                  <div className="md:col-span-4 space-y-8">
+                    {/* 3. Price Evolution */}
+                    <Card className="rounded-[2.5rem] border-none shadow-xl bg-primary/5 p-8">
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-primary" /> Price Evolution
+                      </h4>
+                      <div className="space-y-6 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/20">
+                        {forensicData.priceHistory.length === 0 ? (
+                          <p className="text-[10px] font-bold text-muted-foreground italic pl-6">No price adjustments logged for this terminal.</p>
+                        ) : (
+                          forensicData.priceHistory.map((audit: any, idx: number) => {
+                            const newVal = JSON.parse(audit.newValue || '{}');
+                            const prevVal = JSON.parse(audit.previousValue || '{}');
+                            return (
+                              <div key={audit.id} className="relative pl-8">
+                                <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-primary border-2 border-white dark:border-slate-950 z-10" />
+                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{formatDateTime(audit.createdAt)}</p>
+                                <p className="text-sm font-black">αº│{prevVal.pricePerHour || '50'} ΓåÆ αº│{newVal.pricePerHour}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-1">Adjusted by {audit.actorName}</p>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </Card>
+
+                    {/* 4. Unit Info */}
+                    <Card className="rounded-[2.5rem] border-none shadow-xl bg-slate-900 text-white p-8 overflow-hidden relative">
+                      <div className="absolute top-0 right-0 p-8 opacity-10">
+                        <ShieldCheck className="h-24 w-24" />
+                      </div>
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-6">Unit Intelligence</h4>
+                      <div className="space-y-6">
+                        <div>
+                          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Status Code</p>
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-none font-black text-[10px] uppercase">{forensicData.lockerInfo.status}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Terminal Affiliation</p>
+                          <p className="text-sm font-black">{selectedStationAudit?.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Audit Index</p>
+                          <p className="text-xs font-mono font-bold text-white/60">{forensicData.lockerInfo.id}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
  
     </div>
   );
