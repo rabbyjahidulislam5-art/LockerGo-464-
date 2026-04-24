@@ -193,6 +193,7 @@ export default function AdminDashboard() {
   const [isUserForensicLoading, setIsUserForensicLoading] = useState(false);
   const [userForensicMonthFilter, setUserForensicMonthFilter] = useState("");
   const [userForensicDateFilter, setUserForensicDateFilter] = useState("");
+  const [userForensicActionFilter, setUserForensicActionFilter] = useState("all");
   const [isUserForensicModalOpen, setIsUserForensicModalOpen] = useState(false);
   const [selectedForensicLocker, setSelectedForensicLocker] = useState<string | null>(null);
 
@@ -3152,26 +3153,37 @@ export default function AdminDashboard() {
 
                     {/* 4. Full Audit Trail */}
                     <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 p-10">
-                      <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
-                        <History className="h-4 w-4 text-primary" /> Provenance Logs
-                      </h4>
+                      <div className="flex items-center justify-between mb-8">
+                        <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                          <History className="h-4 w-4 text-primary" /> Provenance Logs
+                        </h4>
+                        <Select value={userForensicActionFilter} onValueChange={setUserForensicActionFilter}>
+                          <SelectTrigger className="w-[180px] rounded-2xl h-10 text-[10px] uppercase font-bold tracking-widest bg-muted/20 border-none">
+                            <SelectValue placeholder="Action Type" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl border-none shadow-2xl">
+                            <SelectItem value="all">All Actions</SelectItem>
+                            <SelectItem value="login">Login</SelectItem>
+                            <SelectItem value="logout">Logout</SelectItem>
+                            <SelectItem value="registration">Registration</SelectItem>
+                            <SelectItem value="profile">Profile Update</SelectItem>
+                            <SelectItem value="delete">Account Deleted</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="max-h-[500px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
                           {(() => {
                             const filteredLogs = userForensicData.audits.filter((log: any) => {
+                              // Only show user/staff related audits here (no bookings/payments)
+                              if (log.entityType?.toLowerCase() !== 'user' && log.entityType?.toLowerCase() !== 'staff') return false;
+
+                              const actionLabel = log.actionType.toLowerCase();
+                              if (userForensicActionFilter !== "all" && !actionLabel.includes(userForensicActionFilter)) return false;
+
                               if (userForensicMonthFilter && !formatMonthLocal(log.createdAt).includes(userForensicMonthFilter)) return false;
                               if (userForensicDateFilter && !formatDateLocal(log.createdAt).includes(userForensicDateFilter)) return false;
-                              if (selectedForensicLocker) {
-                                let bookingId = log.metadata?.bookingId || log.metadata?.booking_id;
-                                if (!bookingId && log.entityType === 'Booking') bookingId = log.entityId;
-                                if (bookingId) {
-                                  const booking = userForensicData.bookings.find((b: any) => b.id === bookingId);
-                                  if (!booking || `${booking.stationName}|${booking.lockerNumber}` !== selectedForensicLocker) return false;
-                                } else {
-                                  // If it's a general user log (like login) but a specific locker is selected, hide it
-                                  return false; 
-                                }
-                              }
+                              
                               return true;
                             });
 
