@@ -2736,6 +2736,10 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
             {activeTab === "user-audit" && (
               <motion.div key="user-audit" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                 {/* Search and Filters */}
