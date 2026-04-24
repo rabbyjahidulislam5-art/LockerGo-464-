@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useCallback } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,7 +37,12 @@ import {
   Download,
   Menu,
   X,
-  Tag
+  Tag,
+  Fingerprint,
+  Package,
+  DollarSign,
+  Phone,
+  Mail
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -698,13 +703,13 @@ export default function AdminDashboard() {
   const renderCleanState = (state: string, isPrevious: boolean = false) => {
     const value = state?.toString()?.trim();
     if (!value || value.toLowerCase() === 'none') {
-      return isPrevious ? <span className="text-muted-foreground/40 font-bold">—</span> : <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
+      return isPrevious ? <span className="text-muted-foreground/40 font-bold">â€”</span> : <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
     }
     try {
       const obj = JSON.parse(value);
       if (typeof obj === 'object') {
         const keys = Object.entries(obj).filter(([k, v]) => !['id', 'userId', 'bookingId', 'stationId', 'createdAt', 'updatedAt'].includes(k) && v !== null && v !== "");
-        if (keys.length === 0) return <span className="text-muted-foreground/40 font-bold">—</span>;
+        if (keys.length === 0) return <span className="text-muted-foreground/40 font-bold">â€”</span>;
         
         return (
           <div className="flex flex-wrap gap-1.5 max-w-[180px]">
@@ -749,7 +754,7 @@ export default function AdminDashboard() {
                  {typeStr}
                </Badge>
                {reason && <span className="text-[10px] text-muted-foreground truncate max-w-[140px]" title={reason}>{reason}</span>}
-               {amount && <span className="text-[10px] font-bold">৳{amount}</span>}
+               {amount && <span className="text-[10px] font-bold">à§³{amount}</span>}
              </div>
            );
         }
@@ -763,7 +768,7 @@ export default function AdminDashboard() {
   const renderBookingState = (state: string, fallbackAction?: string, isPrevious: boolean = false) => {
     const value = state?.toString()?.trim();
     if (!value || value.toLowerCase() === 'none') {
-      if (isPrevious) return <span className="text-muted-foreground/40 font-bold">—</span>;
+      if (isPrevious) return <span className="text-muted-foreground/40 font-bold">â€”</span>;
       if (!fallbackAction) return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
       if (fallbackAction === 'booking_deleted' || fallbackAction === 'booking_cancelled') return <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-none shadow-none uppercase tracking-widest text-[10px]">Cancelled</Badge>;
       return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
@@ -796,8 +801,8 @@ export default function AdminDashboard() {
 
   const stats = [
     { label: "Bookings", value: dashboard?.bookings?.length || 0, icon: ClipboardList, color: "text-blue-500", bg: "bg-blue-500/10", trend: "+8%" },
-    { label: "Travelers", value: dashboard?.users?.length || 0, icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "+12%" },
-    { label: "Revenue", value: `৳${(dashboard?.payments || []).reduce((acc, p) => acc + (p.type?.includes('penalty') ? 0 : (p.amount || 0)), 0).toLocaleString()}`, icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+15%" },
+    { label: "Travelers", value: dashboard?.users?.filter(u => !u.deletedAt).length || 0, icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "+12%" },
+    { label: "Revenue", value: `à§³${(dashboard?.payments || []).reduce((acc, p) => acc + (p.type?.includes('penalty') ? 0 : (p.amount || 0)), 0).toLocaleString()}`, icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+15%" },
     { label: "Security Logs", value: dashboard?.auditLogs?.length || 0, icon: History, color: "text-amber-500", bg: "bg-amber-500/10", trend: "Live" },
   ];
 
@@ -895,7 +900,7 @@ export default function AdminDashboard() {
 
             <div className="flex items-center gap-6 glass-card p-4 rounded-3xl border-white/40 shadow-xl">
               <div className="flex -space-x-3">
-                {dashboard.receptionists.slice(0, 4).map((r) => (
+                {dashboard.receptionists.filter(r => !r.terminatedAt).slice(0, 4).map((r) => (
                   <div key={r.id} className="w-10 h-10 rounded-2xl border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden shadow-lg hover:z-10 transition-transform hover:scale-110">
                     <img src={`https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(r.name)}`} alt={r.name} />
                   </div>
@@ -905,7 +910,7 @@ export default function AdminDashboard() {
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Staff</p>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <p className="text-sm font-black">{dashboard.receptionists.length} Terminals</p>
+                  <p className="text-sm font-black">{dashboard.receptionists.filter(r => !r.terminatedAt).length} Terminals</p>
                 </div>
               </div>
             </div>
@@ -1011,7 +1016,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-black truncate">{log.actionType.replace(/_/g, ' ').toUpperCase()}</p>
-                            <p className="text-[10px] text-muted-foreground truncate font-medium">By {log.actorName} • {new Date(log.createdAt).toLocaleTimeString()}</p>
+                            <p className="text-[10px] text-muted-foreground truncate font-medium">By {log.actorName} â€¢ {new Date(log.createdAt).toLocaleTimeString()}</p>
                           </div>
                         </div>
                       ))}
@@ -1090,7 +1095,7 @@ export default function AdminDashboard() {
                                 <div className="text-xs font-black">IN: {formatDateTime(booking.checkInTime)}</div>
                                 <div className="text-[10px] text-muted-foreground font-medium">EXP: {formatDateTime(booking.checkOutTime)}</div>
                               </TableCell>
-                              <TableCell className="font-black text-xl text-primary">৳{Number(booking.amount || 0).toFixed(2)}</TableCell>
+                              <TableCell className="font-black text-xl text-primary">à§³{Number(booking.amount || 0).toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
                                 <Badge className={cn(
                                   "rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-none shadow-lg",
@@ -1179,7 +1184,7 @@ export default function AdminDashboard() {
                                 <div className="text-[10px] text-muted-foreground">{item.destinationName}</div>
                               </TableCell>
                               <TableCell className="text-xs font-black uppercase tracking-tight">{formatDateTime(item.createdAt)}</TableCell>
-                              <TableCell className="font-black text-xl">৳{Number(item.amount || 0).toFixed(2)}</TableCell>
+                              <TableCell className="font-black text-xl">à§³{Number(item.amount || 0).toFixed(2)}</TableCell>
                               <TableCell className="px-12 text-right">
                                 <Badge variant="outline" className="rounded-xl px-4 py-1.5 font-black text-[10px] uppercase tracking-widest border-primary/20 text-primary">{item.status}</Badge>
                               </TableCell>
@@ -1206,7 +1211,7 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UserCircle className="h-5 w-5 text-primary" />
-                  Registered Travelers ({dashboard.users.length})
+                  Registered Travelers ({dashboard.users.filter(u => !u.deletedAt).length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1219,7 +1224,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {dashboard.users.map(u => (
+                    {dashboard.users.filter(u => !u.deletedAt).map(u => (
                       <TableRow key={u.id} className="cursor-pointer hover:bg-primary/5 transition-colors" onClick={() => setSelectedUser(u)}>
                         <TableCell className="font-medium">{u.name}</TableCell>
                         <TableCell>
@@ -1237,7 +1242,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <LayoutDashboard className="h-5 w-5 text-primary" />
-                  Station Receptionists ({dashboard.receptionists.length})
+                  Station Receptionists ({dashboard.receptionists.filter(r => !r.terminatedAt).length})
                 </CardTitle>
                 <Dialog open={isAddTerminalOpen} onOpenChange={setIsAddTerminalOpen}>
                   <DialogTrigger asChild>
@@ -1307,7 +1312,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {dashboard.receptionists.map(r => (
+                    {dashboard.receptionists.filter(r => !r.terminatedAt).map(r => (
                       <TableRow key={r.id} className="hover:bg-primary/5 transition-colors">
                         <TableCell className="font-medium cursor-pointer" onClick={() => setSelectedReceptionist(r)}>{r.name}</TableCell>
                         <TableCell className="cursor-pointer" onClick={() => setSelectedReceptionist(r)}>
@@ -1388,7 +1393,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase tracking-widest text-primary">Password</p>
-                    <p className="text-sm font-bold bg-primary/5 p-3 rounded-xl border-2 border-primary/20">{selectedUser?.password || '••••••'}</p>
+                    <p className="text-sm font-bold bg-primary/5 p-3 rounded-xl border-2 border-primary/20">{selectedUser?.password || 'â€¢â€¢â€¢â€¢â€¢â€¢'}</p>
                   </div>
                 </div>
               </DialogContent>
@@ -1433,7 +1438,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase tracking-widest text-primary">Password</p>
-                    <p className="text-sm font-bold bg-primary/5 p-3 rounded-xl border-2 border-primary/20">{selectedReceptionist?.password || '••••••'}</p>
+                    <p className="text-sm font-bold bg-primary/5 p-3 rounded-xl border-2 border-primary/20">{selectedReceptionist?.password || 'â€¢â€¢â€¢â€¢â€¢â€¢'}</p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Phone</p>
@@ -1465,7 +1470,7 @@ export default function AdminDashboard() {
                   <History className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">৳{dashboard.payments.reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-xl font-bold">à§³{dashboard.payments.reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1478,8 +1483,8 @@ export default function AdminDashboard() {
                   <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
-                  <div className="text-sm font-bold text-destructive">-৳{dashboard.payments.filter(p => p.type === "40%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
-                  <div className="text-sm font-bold text-primary">+৳{dashboard.payments.filter(p => p.type === "refund" && p.reason?.includes("40")).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-destructive">-à§³{dashboard.payments.filter(p => p.type === "40%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-primary">+à§³{dashboard.payments.filter(p => p.type === "refund" && p.reason?.includes("40")).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1492,8 +1497,8 @@ export default function AdminDashboard() {
                   <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-start justify-center pt-1 pb-4">
-                  <div className="text-sm font-bold text-destructive">-৳{dashboard.payments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
-                  <div className="text-sm font-bold text-primary">+৳{dashboard.payments.filter(p => p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100"))).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-destructive">-à§³{dashboard.payments.filter(p => p.type === "80%_penalty" || p.type === "100%_penalty").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-primary">+à§³{dashboard.payments.filter(p => p.type === "refund" && (p.reason?.includes("80") || p.reason?.includes("100"))).reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1506,7 +1511,7 @@ export default function AdminDashboard() {
                   <ShieldCheck className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">৳{dashboard.payments.filter(p => p.type === "successful_settlement" || p.type === "booking_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-xl font-bold">à§³{dashboard.payments.filter(p => p.type === "successful_settlement" || p.type === "booking_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
 
@@ -1519,7 +1524,7 @@ export default function AdminDashboard() {
                   <CreditCard className="h-4 w-4 text-muted-foreground/40" />
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-1 pb-4">
-                  <div className="text-xl font-bold">৳{dashboard.payments.filter(p => p.type === "due_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
+                  <div className="text-xl font-bold">à§³{dashboard.payments.filter(p => p.type === "due_payment").reduce((sum, p) => sum + p.amount, 0).toFixed(0)}</div>
                 </CardContent>
               </Card>
             </div>
@@ -1594,7 +1599,7 @@ export default function AdminDashboard() {
                         <TableCell className="text-xs">{(payment as any).stationName}</TableCell>
                         <TableCell className="text-xs">{payment.reason}</TableCell>
                         <TableCell className="text-xs">{formatDateTime(payment.createdAt)}</TableCell>
-                        <TableCell className="text-right font-bold text-primary">৳{Number(payment.amount || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">à§³{Number(payment.amount || 0).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     {filteredPayments.length === 0 && (
@@ -1607,7 +1612,7 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableCell colSpan={7} className="font-bold text-lg">Total Income (Filtered)</TableCell>
                       <TableCell className="text-right font-bold text-lg text-primary">
-                        ৳{Number(filteredPayments.reduce((sum, p) => sum + p.amount, 0)).toFixed(2)}
+                        à§³{Number(filteredPayments.reduce((sum, p) => sum + p.amount, 0)).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   </TableHeader>
@@ -1678,7 +1683,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span className="text-xl font-black text-primary">৳{station?.pricePerHour || 50}</span>
+                              <span className="text-xl font-black text-primary">à§³{station?.pricePerHour || 50}</span>
                               <span className="text-[10px] font-bold text-muted-foreground uppercase">/ Hour</span>
                             </div>
                           </TableCell>
@@ -1730,7 +1735,7 @@ export default function AdminDashboard() {
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">New Hourly Price (BDT)</Label>
                     <div className="relative">
-                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-primary">৳</span>
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-primary">à§³</span>
                       <Input 
                         required 
                         type="number" 
@@ -2296,7 +2301,7 @@ export default function AdminDashboard() {
                             <TableCell>
                               {renderPaymentState(log.newValue, false)}
                             </TableCell>
-                            <TableCell className="text-right font-bold text-primary">৳{Number(amount || 0).toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-bold text-primary">à§³{Number(amount || 0).toFixed(2)}</TableCell>
                           </TableRow>
                         );
                       })}
@@ -2454,7 +2459,7 @@ export default function AdminDashboard() {
                     return (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-primary/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Bookings</p><p className="text-xl font-black text-primary">{mb.length}</p></div>
-                        <div className="bg-emerald-500/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Revenue</p><p className="text-lg font-black text-emerald-600">৳{mp.reduce((s,p)=>s+p.amount,0).toFixed(0)}</p></div>
+                        <div className="bg-emerald-500/5 rounded-xl p-3 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">Revenue</p><p className="text-lg font-black text-emerald-600">à§³{mp.reduce((s,p)=>s+p.amount,0).toFixed(0)}</p></div>
                       </div>
                     );
                   })()}
@@ -2501,7 +2506,7 @@ export default function AdminDashboard() {
                     let curY = 38;
 
                     if (hasPaymentSections) {
-                      drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);
+                      drawHeader(`MONTHLY REPORT â€” ${monthName.toUpperCase()} ${yr}`);
                       curY = 38;
                       const boxes = [{label:"Total Bookings",val:`${totalBookingsCt}`,color:[99,102,241] as [number,number,number]},{label:"Total Revenue",val:`BDT ${totalRevenue.toFixed(2)}`,color:[16,185,129] as [number,number,number]},{label:"Total Penalties",val:`BDT ${totalPenalties.toFixed(2)}`,color:[239,68,68] as [number,number,number]},{label:"Total Refunds",val:`BDT ${totalRefunds.toFixed(2)}`,color:[245,158,11] as [number,number,number]}];
                       const bw = (pageW-20)/4-3;
@@ -2509,34 +2514,34 @@ export default function AdminDashboard() {
                       curY+=24; doc.setTextColor(0,0,0);
 
                       if (reportSections.bookings) { const bd=payments.filter(p=>p.type==="booking_payment"); if(bd.length>0){ curY=drawSectionHeader("BOOKING PAYMENTS",curY,[99,102,241]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(bd),...tStyle}); curY=addSubtotal(bd,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.penalty40) { const p40=payments.filter(p=>p.type==="40%_penalty"||(p.type==="refund"&&p.reason?.includes("40"))); if(p40.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("40% PENALTY & REFUND",curY,[239,68,68]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p40),...tStyle}); curY=addSubtotal(p40,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.penalty80) { const p80=payments.filter(p=>p.type==="80%_penalty"||p.type==="100%_penalty"||(p.type==="refund"&&(p.reason?.includes("80")||p.reason?.includes("100")))); if(p80.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("80% / 100% PENALTY & REFUND",curY,[220,38,38]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p80),...tStyle}); curY=addSubtotal(p80,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.settlement) { const settle=payments.filter(p=>p.type==="successful_settlement"); if(settle.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("SUCCESSFUL SETTLEMENTS",curY,[16,185,129]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(settle),...tStyle}); curY=addSubtotal(settle,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.due) { const due=payments.filter(p=>p.type==="due_payment"); if(due.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("DUE PAYMENT COLLECTED",curY,[245,158,11]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(due),...tStyle}); curY=addSubtotal(due,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.penalty40) { const p40=payments.filter(p=>p.type==="40%_penalty"||(p.type==="refund"&&p.reason?.includes("40"))); if(p40.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT â€” ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("40% PENALTY & REFUND",curY,[239,68,68]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p40),...tStyle}); curY=addSubtotal(p40,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.penalty80) { const p80=payments.filter(p=>p.type==="80%_penalty"||p.type==="100%_penalty"||(p.type==="refund"&&(p.reason?.includes("80")||p.reason?.includes("100")))); if(p80.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT â€” ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("80% / 100% PENALTY & REFUND",curY,[220,38,38]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p80),...tStyle}); curY=addSubtotal(p80,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.settlement) { const settle=payments.filter(p=>p.type==="successful_settlement"); if(settle.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT â€” ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("SUCCESSFUL SETTLEMENTS",curY,[16,185,129]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(settle),...tStyle}); curY=addSubtotal(settle,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.due) { const due=payments.filter(p=>p.type==="due_payment"); if(due.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT â€” ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("DUE PAYMENT COLLECTED",curY,[245,158,11]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(due),...tStyle}); curY=addSubtotal(due,(doc as any).lastAutoTable.finalY); } }
                     }
 
                     if (reportSections.staff) {
                       if (hasPaymentSections) { doc.addPage(); } // Only add new page if payment pages exist; otherwise use page 1
-                      drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`); curY=38;
+                      drawHeader(`STAFF SUMMARY â€” ${monthName.toUpperCase()} ${yr}`); curY=38;
                       const tu=dashboard.users.length; const nu=dashboard.users.filter(u=>{const d=new Date((u as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
                       const tr=dashboard.receptionists.length; const nr=dashboard.receptionists.filter(r=>{const d=new Date((r as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
                       const sb=[{label:"Total Travelers",val:`${tu}`,color:[99,102,241] as [number,number,number]},{label:"New This Month",val:`${nu}`,color:[16,185,129] as [number,number,number]},{label:"Total Receptionists",val:`${tr}`,color:[245,158,11] as [number,number,number]},{label:"New This Month",val:`${nr}`,color:[139,92,246] as [number,number,number]}];
                       const sbw=(pageW-20)/4-3;
                       sb.forEach((b,i)=>{const bx=10+i*(sbw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,sbw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+sbw/2,curY+6,{align:"center"});doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text(b.val,bx+sbw/2,curY+13,{align:"center"});});
                       curY+=24; doc.setTextColor(0,0,0);
-                      let fu=dashboard.users; // No phone filter — always show ALL travelers
+                      let fu=dashboard.users; // No phone filter â€” always show ALL travelers
                       curY=drawSectionHeader("REGISTERED TRAVELERS",curY,[99,102,241]);
                       autoTable(doc,{startY:curY,head:[["#","Name","Phone","Email","Address"]],body:fu.map((u,i)=>[i+1,u.name,(u as any).phone||"-",u.email||"-",(u as any).address||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
                       curY=(doc as any).lastAutoTable.finalY+8;
-                      if(curY>160){doc.addPage();drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`);curY=38;}
-                      let fr=dashboard.receptionists; // No email filter — always show ALL receptionists
+                      if(curY>160){doc.addPage();drawHeader(`STAFF SUMMARY â€” ${monthName.toUpperCase()} ${yr}`);curY=38;}
+                      let fr=dashboard.receptionists; // No email filter â€” always show ALL receptionists
                       curY=drawSectionHeader("STATION RECEPTIONISTS",curY,[245,158,11]);
                       autoTable(doc,{startY:curY,head:[["#","Name","Station","Email"]],body:fr.map((r,i)=>[i+1,r.name,(r as any).stationName||"-",(r as any).email||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
                       curY=(doc as any).lastAutoTable.finalY+8;
                     }
 
                     const pages=(doc as any).internal.getNumberOfPages();
-                    for(let i=1;i<=pages;i++){doc.setPage(i);const pH=doc.internal.pageSize.getHeight();doc.setFillColor(241,245,249);doc.rect(0,pH-10,pageW,10,"F");doc.setFontSize(7);doc.setFont("helvetica","normal");doc.setTextColor(100,116,139);doc.text(`Page ${i} of ${pages}`,pageW/2,pH-3,{align:"center"});doc.text("Smart Locker System — Confidential",10,pH-3);doc.text(`${monthName} ${yr} Report`,pageW-10,pH-3,{align:"right"});}
+                    for(let i=1;i<=pages;i++){doc.setPage(i);const pH=doc.internal.pageSize.getHeight();doc.setFillColor(241,245,249);doc.rect(0,pH-10,pageW,10,"F");doc.setFontSize(7);doc.setFont("helvetica","normal");doc.setTextColor(100,116,139);doc.text(`Page ${i} of ${pages}`,pageW/2,pH-3,{align:"center"});doc.text("Smart Locker System â€” Confidential",10,pH-3);doc.text(`${monthName} ${yr} Report`,pageW-10,pH-3,{align:"right"});}
                     doc.save(`LockerGo_Report_${monthName}_${yr}.pdf`);
                   }}>
                     <Download className="h-4 w-4" /> Generate PDF Report
@@ -2633,7 +2638,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="text-center">
                                   <p className="text-[8px] font-black uppercase opacity-60">Price/hr</p>
-                                  <p className="text-sm font-black">৳{Number(station.pricePerHour || 50)}</p>
+                                  <p className="text-sm font-black">à§³{Number(station.pricePerHour || 50)}</p>
                                 </div>
                               </div>
                             </motion.div>
@@ -2677,7 +2682,7 @@ export default function AdminDashboard() {
                               </div>
                               <div className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10">
                                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Current Rate</p>
-                                <p className="text-3xl font-black tracking-tighter">৳{selectedStationAudit.pricePerHour}</p>
+                                <p className="text-3xl font-black tracking-tighter">à§³{selectedStationAudit.pricePerHour}</p>
                               </div>
                               <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10">
                                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Destination</p>
@@ -2735,9 +2740,9 @@ export default function AdminDashboard() {
                           <p className="text-sm font-medium text-muted-foreground">Choose a station from the left to explore its visual locker grid and historical audit logs.</p>
                         </div>
                       </div>
-                    )}
-                  </div>
+                  )}
                 </div>
+              </div>
               </motion.div>
             )}
             {activeTab === "user-audit" && (
@@ -2778,8 +2783,8 @@ export default function AdminDashboard() {
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-white/20 bg-white/80 backdrop-blur-xl">
                           <SelectItem value="all">All Time</SelectItem>
-                          <SelectItem value="new">New (≤1m)</SelectItem>
-                          <SelectItem value="old">Old (>1m)</SelectItem>
+                          <SelectItem value="new">New (&lt;1m)</SelectItem>
+                          <SelectItem value="old">Old (&gt;1m)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -2885,7 +2890,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 space-y-2">
                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Total Contribution</p>
-                                  <p className="text-4xl font-black text-emerald-600">৳{userForensicData.payments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)}</p>
+                                  <p className="text-4xl font-black text-emerald-600">BDT {userForensicData.payments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)}</p>
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-amber-500/5 space-y-2">
                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Audit Logs</p>
@@ -2923,10 +2928,12 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="h-full flex flex-col items-center justify-center space-y-8 glass-card rounded-[4rem] border-dashed p-20">
                         <div className="relative">
-                          <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full animate-pulse" />
-                          <UserCircle className="h-24 w-24 text-primary/40 relative z-10" />
+                          <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
+                          <div className="relative h-40 w-40 rounded-[3rem] bg-primary/5 flex items-center justify-center border-2 border-primary/20 shadow-inner">
+                            <Fingerprint className="h-20 w-20 text-primary opacity-20" />
+                          </div>
                         </div>
-                        <div className="max-w-md text-center">
+                        <div className="text-center">
                           <h3 className="text-3xl font-black tracking-tight mb-3">Identity Audit Node</h3>
                           <p className="text-sm font-medium text-muted-foreground leading-relaxed">Choose a traveler from the left to access their complete historical timeline, financial contributions, and provenance data.</p>
                         </div>
@@ -2959,7 +2966,7 @@ export default function AdminDashboard() {
                       {selectedUserAudit.isDeleted && <Badge className="bg-red-500 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Deactivated Account</Badge>}
                     </div>
                     <h2 className="text-6xl font-black tracking-tighter uppercase">{selectedUserAudit.name}</h2>
-                    <p className="text-white/60 font-black text-xs uppercase tracking-[0.2em]">{selectedUserAudit.phone} • {selectedUserAudit.email || "NO EMAIL"}</p>
+                    <p className="text-white/60 font-black text-xs uppercase tracking-[0.2em]">{selectedUserAudit.phone} &bull; {selectedUserAudit.email || "NO EMAIL"}</p>
                   </div>
                   <div className="text-right space-y-2">
                     <div className="flex flex-col sm:flex-row gap-3 justify-end items-center">
@@ -3057,7 +3064,7 @@ export default function AdminDashboard() {
                                       <Badge className="bg-primary/10 text-primary border-none font-black text-[8px] uppercase tracking-widest">{b.status.replace('_', ' ')}</Badge>
                                       <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{formatDateTime(b.createdAt)}</span>
                                     </div>
-                                    <h4 className="text-2xl font-black tracking-tighter">{b.stationName} — Unit {b.lockerNumber}</h4>
+                                    <h4 className="text-2xl font-black tracking-tighter">{b.stationName} â€” Unit {b.lockerNumber}</h4>
                                   </div>
                                   <div className="grid grid-cols-2 gap-8 pt-2">
                                     <div>
@@ -3073,7 +3080,7 @@ export default function AdminDashboard() {
                                 <div className="md:text-right flex flex-col justify-between">
                                   <div className="space-y-1">
                                     <p className="text-[10px] font-black uppercase text-muted-foreground">Settlement Value</p>
-                                    <p className="text-3xl font-black text-primary">৳{b.amount}</p>
+                                    <p className="text-3xl font-black text-primary">à§³{b.amount}</p>
                                   </div>
                                   <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic pt-4">Locker Index: {b.lockerId}</p>
                                 </div>
@@ -3103,7 +3110,7 @@ export default function AdminDashboard() {
                                 <p className="text-[8px] font-black uppercase text-white/40 tracking-widest">{formatDateTime(p.createdAt)}</p>
                                 <p className="text-xs font-black uppercase tracking-tighter">{p.type.replace('_', ' ')}</p>
                               </div>
-                              <p className="text-sm font-black text-emerald-400">৳{p.amount}</p>
+                              <p className="text-sm font-black text-emerald-400">à§³{p.amount}</p>
                             </div>
                           </div>
                         ))}
@@ -3119,18 +3126,41 @@ export default function AdminDashboard() {
                         <History className="h-4 w-4 text-primary" /> Provenance Logs
                       </h4>
                       <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
-                        {userForensicData.audits.map((log: any) => (
-                          <div key={log.id} className="relative pl-8">
-                            <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-primary border-2 border-white dark:border-slate-950 z-10" />
-                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{formatDateTime(log.createdAt)}</p>
-                            <p className="text-xs font-black uppercase tracking-tighter">{log.actionType.replace('_', ' ')}</p>
-                            <div className="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border/50">
-                              <p className="text-[9px] font-bold text-muted-foreground leading-relaxed italic">
-                                Action recorded on {log.entityType} unit index {log.entityId}
-                              </p>
+                        {userForensicData.audits.map((log: any) => {
+                          const actionLabel = log.actionType.toLowerCase();
+                          let icon = <Activity className="h-4 w-4" />;
+                          let color = "bg-primary";
+                          let detail = log.details || "";
+
+                          if (actionLabel.includes('login')) { icon = <Activity className="h-4 w-4 text-emerald-500" />; color = "bg-emerald-500"; }
+                          if (actionLabel.includes('logout')) { icon = <LogOut className="h-4 w-4 text-slate-500" />; color = "bg-slate-500"; }
+                          if (actionLabel.includes('booking')) { icon = <Package className="h-4 w-4 text-blue-500" />; color = "bg-blue-500"; }
+                          if (actionLabel.includes('payment')) { icon = <DollarSign className="h-4 w-4 text-emerald-600" />; color = "bg-emerald-600"; }
+                          if (actionLabel.includes('penalty')) { icon = <AlertCircle className="h-4 w-4 text-red-500" />; color = "bg-red-500"; }
+                          if (actionLabel.includes('refund')) { icon = <DollarSign className="h-4 w-4 text-amber-500" />; color = "bg-amber-500"; }
+                          if (actionLabel.includes('profile')) { icon = <UserCircle className="h-4 w-4 text-indigo-500" />; color = "bg-indigo-500"; }
+                          if (actionLabel.includes('delete')) { icon = <Trash2 className="h-4 w-4 text-red-600" />; color = "bg-red-600"; }
+
+                          return (
+                            <div key={log.id} className="relative pl-8 group">
+                              <div className={cn("absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white dark:border-slate-950 z-10 transition-transform group-hover:scale-125", color)} />
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{formatDateTime(log.createdAt)}</p>
+                                <Badge className={cn("text-[8px] font-black uppercase tracking-tighter border-none text-white", color)}>
+                                  {log.actionType.replace('_', ' ')}
+                                </Badge>
+                              </div>
+                              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-border/50 group-hover:border-primary/20 transition-colors">
+                                <p className="text-xs font-bold leading-relaxed">{log.description || `System recorded ${log.actionType.toLowerCase()} on ${log.entityType} ${log.entityId}`}</p>
+                                {log.metadata && (
+                                  <pre className="mt-2 text-[9px] font-mono text-muted-foreground bg-black/5 dark:bg-white/5 p-2 rounded-lg overflow-x-auto">
+                                    {JSON.stringify(log.metadata, null, 2)}
+                                  </pre>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </Card>
                   </div>
@@ -3144,10 +3174,10 @@ export default function AdminDashboard() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// AdminReviewsPanel — Full review management: filter + sort + delete
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AdminReviewsPanel â€” Full review management: filter + sort + delete
 // Real-time via stable useCallback so socket listener never leaks
-// ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type AdminReview = {
   id: string;
@@ -3180,7 +3210,7 @@ function AdminReviewsPanel() {
 
   const { toast } = useToast();
 
-  // ── Stable fetch — useCallback so useRealtime never leaks ──
+  // â”€â”€ Stable fetch â€” useCallback so useRealtime never leaks â”€â”€
   const fetchReviews = useCallback(async () => {
     try {
       const res  = await fetch(`/api/smart-tourist/reviews?limit=100`);
@@ -3196,10 +3226,10 @@ function AdminReviewsPanel() {
   // Fetch when date-filters change
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
-  // ── Real-time: stable callback → no socket leaks ───────
+  // â”€â”€ Real-time: stable callback â†’ no socket leaks â”€â”€â”€â”€â”€â”€â”€
   useRealtime(fetchReviews);
 
-  // ── Delete ──────────────────────────────────────────────
+  // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleDelete = async (id: string) => {
     if (!confirm("Permanently delete this review?")) return;
     setDeleting(id);
@@ -3219,7 +3249,7 @@ function AdminReviewsPanel() {
 
   const avgRating = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-    : "–";
+    : "0.0";
 
   return (
     <div className="space-y-8">
@@ -3247,7 +3277,7 @@ function AdminReviewsPanel() {
 
 
 
-      {/* ── Reviews Table ── */}
+      {/* â”€â”€ Reviews Table â”€â”€ */}
       <Card className="glass-card rounded-[2rem] border-white/20 shadow-xl overflow-hidden">
         <CardHeader className="px-8 py-6 border-b border-white/10">
           <CardTitle className="text-lg font-black tracking-tight">
