@@ -424,7 +424,7 @@ function BookingHistoryInline({ history }: { history: Booking[] }) {
                     <TableCell className="font-bold p-6">{item.stationName}</TableCell>
                     <TableCell className="p-6 font-medium">Unit #{item.lockerNumber}</TableCell>
                     <TableCell className="p-6 text-muted-foreground">{formatDateTime(item.createdAt)}</TableCell>
-                    <TableCell className="font-black text-lg text-primary p-6">৳{item.totalAmount?.toFixed(2) || item.amount?.toFixed(2)}</TableCell>
+                    <TableCell className="font-black text-lg text-primary p-6">৳{Number(item.totalAmount || 0).toFixed(2) || Number(item.amount || 0).toFixed(2)}</TableCell>
                     <TableCell className="p-6">
                       <Badge className={`px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest ${item.status === 'completed' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-primary/10 text-primary border-primary/20'}`}>
                         {item.status.replace(/_/g, ' ')}
@@ -490,7 +490,7 @@ function PaymentRefundsInline({ payments }: { payments: PaymentRecord[] }) {
               </TableCell>
               <TableCell className="p-6 text-xs text-muted-foreground">{formatDateTime(item.createdAt)}</TableCell>
               <TableCell className={`p-6 text-right font-black text-xl ${item.type.includes('penalty') ? 'text-destructive' : 'text-primary'}`}>
-                {item.type.includes('penalty') ? '-' : '+'}৳{item.amount.toFixed(2)}
+                {item.type.includes('penalty') ? '-' : '+'}৳{Number(item.amount || 0).toFixed(2)}
               </TableCell>
             </TableRow>
           ))}
@@ -741,7 +741,7 @@ function LockerBookingModal({ station, lockers, open, onOpenChange, userId, onSu
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hourly Rent</Label>
-                    <div className="h-14 flex items-center px-6 rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 font-black text-xl">৳{(station?.pricePerHour || 50).toFixed(2)}</div>
+                    <div className="h-14 flex items-center px-6 rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 font-black text-xl">৳{Number(station?.pricePerHour || 50).toFixed(2)}</div>
                   </div>
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Total Due</Label>
@@ -891,7 +891,7 @@ function BookingCard({ booking, userId }: { booking: Booking, userId: string }) 
             {booking.dueAmount > 0 && (
               <motion.div animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 2, repeat: Infinity }} className="bg-destructive/10 p-4 rounded-2xl border-2 border-destructive/20 text-center">
                 <p className="text-[10px] font-black uppercase tracking-widest text-destructive mb-1">Overtime Payment Required</p>
-                <p className="text-2xl font-black text-destructive">৳{booking.dueAmount.toFixed(2)}</p>
+                <p className="text-2xl font-black text-destructive">৳{Number(booking.dueAmount || 0).toFixed(2)}</p>
               </motion.div>
             )}
           </CardContent>
@@ -980,7 +980,7 @@ function BookingCard({ booking, userId }: { booking: Booking, userId: string }) 
               <motion.div animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-destructive rounded-full" />
               <CreditCard className="h-20 w-20 text-destructive mb-4 relative z-10" />
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-destructive relative z-10 opacity-60">Payable Amount</span>
-              <span className="text-6xl font-black text-destructive relative z-10 mt-2">৳{booking.dueAmount.toFixed(2)}</span>
+              <span className="text-6xl font-black text-destructive relative z-10 mt-2">৳{Number(booking.dueAmount || 0).toFixed(2)}</span>
             </div>
             <Button className="w-full h-16 text-2xl font-black rounded-3xl shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 ripple" onClick={handlePayDue} disabled={isProcessingDue}>
               {isProcessingDue ? <Loader2 className="h-8 w-8 animate-spin" /> : "Settle Balance & Finish"}

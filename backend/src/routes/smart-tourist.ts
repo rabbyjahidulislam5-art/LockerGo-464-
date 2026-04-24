@@ -460,7 +460,7 @@ async function loadStationsFromDb() {
     FROM stations
     ORDER BY destination_id, name
   `);
-  return result.rows;
+  return result.rows.map(s => ({ ...s, pricePerHour: Number(s.pricePerHour || 50) }));
 }
 
 async function loadLockersFromDb() {
@@ -673,7 +673,7 @@ async function userDashboard(userId: string) {
       ...b, 
       stationName: station?.name || b.stationName, // Fallback to saved name if station not found
       userPhone: user.phone,
-      totalAmount: b.paidAmount + b.dueAmount // Ensure total amount is available
+      totalAmount: Number(b.paidAmount || 0) + Number(b.dueAmount || 0) // Ensure total amount is available
     };
   };
 
