@@ -1155,7 +1155,13 @@ router.get("/smart-tourist/admin/forensics/user/:userId", asyncRoute(async (req,
   });
 
   const userPayments = payments.filter(p => p.userId === userId || bookings.find(b => b.id === p.bookingId && b.userId === userId));
-  const userAudits = auditLogs.filter(a => a.entityType === "user" && a.entityId === userId || (a.actorRole === "user" && (a as any).actorId === userId));
+  const userAudits = auditLogs.filter(a => {
+    if (a.entityType === "user" && a.entityId === userId) return true;
+    if (a.actorRole === "user" && (a as any).actorId === userId) return true;
+    const isUserBooking = (a.entityType === "booking" || a.entityType === "Booking") && userBookings.some(b => b.id === a.entityId);
+    const isUserPayment = (a.entityType === "payment" || a.entityType === "Payment") && userPayments.some(p => p.id === a.entityId);
+    return isUserBooking || isUserPayment;
+  });
 
   res.json({
     user,

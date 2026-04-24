@@ -2500,10 +2500,10 @@ export default function AdminDashboard() {
                     };
 
                     const hasPaymentSections = reportSections.bookings || reportSections.penalty40 || reportSections.penalty80 || reportSections.settlement || reportSections.due;
-                    const totalRevenue = payments.reduce((s,p)=>s+p.amount,0);
-                    const totalPenalties = payments.filter(p=>p.type.includes("penalty")).reduce((s,p)=>s+p.amount,0);
-                    const totalRefunds = payments.filter(p=>p.type==="refund").reduce((s,p)=>s+p.amount,0);
-                    const totalBookingsCt = dashboard.bookings.filter(b=>{const d=new Date(b.createdAt);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
+                    const totalRevenue = payments.reduce((s: number, p: any) => s + (p.amount || 0), 0);
+                    const totalPenalties = payments.filter((p: any) => p.type.includes("penalty")).reduce((s: number, p: any) => s + (p.amount || 0), 0);
+                    const totalRefunds = payments.filter((p: any) => p.type === "refund").reduce((s: number, p: any) => s + (p.amount || 0), 0);
+                    const totalBookingsCt = dashboard.bookings.filter((b: any) => { const d = new Date(b.createdAt); return d.getFullYear() === yr && d.getMonth() + 1 === mo; }).length;
                     let curY = 38;
 
                     if (hasPaymentSections) {
@@ -2514,30 +2514,30 @@ export default function AdminDashboard() {
                       boxes.forEach((b,i)=>{const bx=10+i*(bw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,bw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+bw/2,curY+6,{align:"center"});doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text(b.val,bx+bw/2,curY+13,{align:"center"});});
                       curY+=24; doc.setTextColor(0,0,0);
 
-                      if (reportSections.bookings) { const bd=payments.filter(p=>p.type==="booking_payment"); if(bd.length>0){ curY=drawSectionHeader("BOOKING PAYMENTS",curY,[99,102,241]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(bd),...tStyle}); curY=addSubtotal(bd,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.penalty40) { const p40=payments.filter(p=>p.type==="40%_penalty"||(p.type==="refund"&&p.reason?.includes("40"))); if(p40.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("40% PENALTY & REFUND",curY,[239,68,68]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p40),...tStyle}); curY=addSubtotal(p40,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.penalty80) { const p80=payments.filter(p=>p.type==="80%_penalty"||p.type==="100%_penalty"||(p.type==="refund"&&(p.reason?.includes("80")||p.reason?.includes("100")))); if(p80.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("80% / 100% PENALTY & REFUND",curY,[220,38,38]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p80),...tStyle}); curY=addSubtotal(p80,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.settlement) { const settle=payments.filter(p=>p.type==="successful_settlement"); if(settle.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("SUCCESSFUL SETTLEMENTS",curY,[16,185,129]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(settle),...tStyle}); curY=addSubtotal(settle,(doc as any).lastAutoTable.finalY); } }
-                      if (reportSections.due) { const due=payments.filter(p=>p.type==="due_payment"); if(due.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("DUE PAYMENT COLLECTED",curY,[245,158,11]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(due),...tStyle}); curY=addSubtotal(due,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.bookings) { const bd=payments.filter((p: any)=>p.type==="booking_payment"); if(bd.length>0){ curY=drawSectionHeader("BOOKING PAYMENTS",curY,[99,102,241]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(bd),...tStyle}); curY=addSubtotal(bd,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.penalty40) { const p40=payments.filter((p: any)=>p.type==="40%_penalty"||(p.type==="refund"&&p.reason?.includes("40"))); if(p40.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("40% PENALTY & REFUND",curY,[239,68,68]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p40),...tStyle}); curY=addSubtotal(p40,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.penalty80) { const p80=payments.filter((p: any)=>p.type==="80%_penalty"||p.type==="100%_penalty"||(p.type==="refund"&&(p.reason?.includes("80")||p.reason?.includes("100")))); if(p80.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("80% / 100% PENALTY & REFUND",curY,[220,38,38]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(p80),...tStyle}); curY=addSubtotal(p80,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.settlement) { const settle=payments.filter((p: any)=>p.type==="successful_settlement"); if(settle.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("SUCCESSFUL SETTLEMENTS",curY,[16,185,129]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(settle),...tStyle}); curY=addSubtotal(settle,(doc as any).lastAutoTable.finalY); } }
+                      if (reportSections.due) { const due=payments.filter((p: any)=>p.type==="due_payment"); if(due.length>0){ if(curY>160){doc.addPage();drawHeader(`MONTHLY REPORT — ${monthName.toUpperCase()} ${yr}`);curY=38;} curY=drawSectionHeader("DUE PAYMENT COLLECTED",curY,[245,158,11]); autoTable(doc,{startY:curY,head:[cols],body:makeRows(due),...tStyle}); curY=addSubtotal(due,(doc as any).lastAutoTable.finalY); } }
                     }
 
                     if (reportSections.staff) {
                       if (hasPaymentSections) { doc.addPage(); } // Only add new page if payment pages exist; otherwise use page 1
                       drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`); curY=38;
-                      const tu=dashboard.users.length; const nu=dashboard.users.filter(u=>{const d=new Date((u as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
-                      const tr=dashboard.receptionists.length; const nr=dashboard.receptionists.filter(r=>{const d=new Date((r as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
+                      const tu=dashboard.users.length; const nu=dashboard.users.filter((u: any)=>{const d=new Date((u as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
+                      const tr=dashboard.receptionists.length; const nr=dashboard.receptionists.filter((r: any)=>{const d=new Date((r as any).createdAt||0);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).length;
                       const sb=[{label:"Total Travelers",val:`${tu}`,color:[99,102,241] as [number,number,number]},{label:"New This Month",val:`${nu}`,color:[16,185,129] as [number,number,number]},{label:"Total Receptionists",val:`${tr}`,color:[245,158,11] as [number,number,number]},{label:"New This Month",val:`${nr}`,color:[139,92,246] as [number,number,number]}];
                       const sbw=(pageW-20)/4-3;
-                      sb.forEach((b,i)=>{const bx=10+i*(sbw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,sbw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+sbw/2,curY+6,{align:"center"});doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text(b.val,bx+sbw/2,curY+13,{align:"center"});});
+                      sb.forEach((b: any,i)=>{const bx=10+i*(sbw+4);doc.setFillColor(b.color[0],b.color[1],b.color[2]);doc.roundedRect(bx,curY,sbw,18,3,3,"F");doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text(b.label,bx+sbw/2,curY+6,{align:"center"});doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text(b.val,bx+sbw/2,curY+13,{align:"center"});});
                       curY+=24; doc.setTextColor(0,0,0);
                       let fu=dashboard.users; // No phone filter — always show ALL travelers
                       curY=drawSectionHeader("REGISTERED TRAVELERS",curY,[99,102,241]);
-                      autoTable(doc,{startY:curY,head:[["#","Name","Phone","Email","Address"]],body:fu.map((u,i)=>[i+1,u.name,(u as any).phone||"-",u.email||"-",(u as any).address||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
+                      autoTable(doc,{startY:curY,head:[["#","Name","Phone","Email","Address"]],body:fu.map((u: any,i: number)=>[i+1,u.name,(u as any).phone||"-",u.email||"-",(u as any).address||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
                       curY=(doc as any).lastAutoTable.finalY+8;
                       if(curY>160){doc.addPage();drawHeader(`STAFF SUMMARY — ${monthName.toUpperCase()} ${yr}`);curY=38;}
                       let fr=dashboard.receptionists; // No email filter — always show ALL receptionists
                       curY=drawSectionHeader("STATION RECEPTIONISTS",curY,[245,158,11]);
-                      autoTable(doc,{startY:curY,head:[["#","Name","Station","Email"]],body:fr.map((r,i)=>[i+1,r.name,(r as any).stationName||"-",(r as any).email||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
+                      autoTable(doc,{startY:curY,head:[["#","Name","Station","Email"]],body:fr.map((r: any,i: number)=>[i+1,r.name,(r as any).stationName||"-",(r as any).email||"-"]),...tStyle,columnStyles:{0:{cellWidth:8}}});
                       curY=(doc as any).lastAutoTable.finalY+8;
                     }
 
