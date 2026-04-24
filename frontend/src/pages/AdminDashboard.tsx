@@ -291,7 +291,7 @@ export default function AdminDashboard() {
 
   const enrichedAuditLogs = useMemo(() => {
     if (!dashboard) return [];
-    return dashboard.auditLogs.map(log => {
+    return (dashboard?.auditLogs || []).map(log => {
       let actorEmail = "";
       let actorPhone = "";
       let actorAddress = "";
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
 
       // 1. Try to find details from memory based on IDs
       if (log.entityType === "user" || (log.entityType === "session" && log.actorRole === "user")) {
-        const user = dashboard.users.find(u => u.id === log.entityId);
+        const user = dashboard?.users?.find(u => u.id === log.entityId);
         if (user) {
           actorEmail = user.email || "";
           actorPhone = user.phone || "";
@@ -310,14 +310,14 @@ export default function AdminDashboard() {
           userPhone = user.phone || "";
         }
       } else if (log.entityType === "receptionist" || (log.entityType === "session" && log.actorRole === "receptionist")) {
-        const rec = dashboard.receptionists.find(r => r.id === log.entityId);
+        const rec = dashboard?.receptionists?.find(r => r.id === log.entityId);
         if (rec) {
           actorEmail = rec.email || "";
           actorPhone = (rec as any).phone || "";
           stationId = stationId || rec.stationId || "";
         }
       } else if (log.entityType === "booking") {
-        const b = dashboard.bookings.find(item => item.id === log.entityId);
+        const b = dashboard?.bookings?.find(item => item.id === log.entityId);
         if (b) {
           userPhone = b.userPhone || "";
           lockerNumber = b.lockerNumber?.toString() || "";
@@ -325,7 +325,7 @@ export default function AdminDashboard() {
           stationId = stationId || b.stationId || "";
         }
       } else if (log.entityType === "payment") {
-        const p = dashboard.payments.find(item => item.id === log.entityId);
+        const p = dashboard?.payments?.find(item => item.id === log.entityId);
         if (p) {
           userPhone = p.userPhone || "";
           lockerNumber = p.lockerNumber?.toString() || "";
@@ -387,7 +387,7 @@ export default function AdminDashboard() {
 
         // Try to map stationName to stationId if missing
         if (stationName && !stationId) {
-          const station = dashboard.receptionists.find(r => r.stationName === stationName || r.stationId === stationName);
+          const station = dashboard?.receptionists?.find(r => r.stationName === stationName || r.stationId === stationName);
           if (station) stationId = station.stationId;
         }
       } catch (err) {
