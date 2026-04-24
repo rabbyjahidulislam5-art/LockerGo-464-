@@ -194,6 +194,7 @@ export default function AdminDashboard() {
   const [userForensicMonthFilter, setUserForensicMonthFilter] = useState("");
   const [userForensicDateFilter, setUserForensicDateFilter] = useState("");
   const [isUserForensicModalOpen, setIsUserForensicModalOpen] = useState(false);
+  const [selectedForensicLocker, setSelectedForensicLocker] = useState<string | null>(null);
 
   const fetchStationAuditList = async () => {
     setIsStationAuditLoading(true);
@@ -3022,12 +3023,22 @@ export default function AdminDashboard() {
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{new Set(userForensicData.bookings.map((b: any) => b.stationName)).size} Terminals Utilized</p>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {Array.from(new Set(userForensicData.bookings.map((b: any) => `${b.stationName}|${b.lockerNumber}`))).map((pair, idx) => {
+                        {Array.from(new Set(userForensicData.bookings.map((b: any) => `${b.stationName}|${b.lockerNumber}`))).map((pair: any, idx) => {
                           const [stationName, lockerNumber] = pair.split('|');
+                          const isSelected = selectedForensicLocker === pair;
                           return (
-                            <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-border/50 shadow-sm text-center group hover:border-primary/30 transition-all">
-                              <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">{stationName}</p>
-                              <p className="text-lg font-black text-primary">Locker {lockerNumber}</p>
+                            <div 
+                              key={idx} 
+                              onClick={() => setSelectedForensicLocker(isSelected ? null : pair)}
+                              className={cn(
+                                "p-4 rounded-2xl border shadow-sm text-center group transition-all cursor-pointer",
+                                isSelected 
+                                  ? "bg-primary text-white border-primary shadow-primary/30" 
+                                  : "bg-white dark:bg-slate-900 border-border/50 hover:border-primary/30"
+                              )}
+                            >
+                              <p className={cn("text-[8px] font-black uppercase mb-1 transition-colors", isSelected ? "text-white/70" : "text-muted-foreground")}>{stationName}</p>
+                              <p className={cn("text-lg font-black transition-colors", isSelected ? "text-white" : "text-primary")}>Locker {lockerNumber}</p>
                             </div>
                           );
                         })}
@@ -3050,6 +3061,7 @@ export default function AdminDashboard() {
                           .filter((b: any) => {
                             if (userForensicMonthFilter && !formatMonthLocal(b.createdAt).includes(userForensicMonthFilter)) return false;
                             if (userForensicDateFilter && !formatDateLocal(b.createdAt).includes(userForensicDateFilter)) return false;
+                            if (selectedForensicLocker && `${b.stationName}|${b.lockerNumber}` !== selectedForensicLocker) return false;
                             return true;
                           })
                           .map((b: any) => (
