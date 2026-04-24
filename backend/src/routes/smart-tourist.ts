@@ -91,6 +91,7 @@ let stations: Array<{
   processingLockers: number;
   pricePerHour: number;
   address: string;
+  terminatedAt?: string | null;
 }> = [];
 
 let receptionists: Array<{
@@ -322,8 +323,9 @@ async function initializeStorage() {
       CREATE TABLE IF NOT EXISTS smart_tourist_audit_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
       CREATE TABLE IF NOT EXISTS smart_tourist_otp_logs (id TEXT PRIMARY KEY, data JSONB NOT NULL);
       CREATE TABLE IF NOT EXISTS smart_tourist_password_reset_otps (id TEXT PRIMARY KEY, data JSONB NOT NULL);
-      -- Ensure stations table has price_per_hour column
+      -- Ensure stations table has price_per_hour and terminated_at columns
       ALTER TABLE stations ADD COLUMN IF NOT EXISTS price_per_hour NUMERIC DEFAULT 50;
+      ALTER TABLE stations ADD COLUMN IF NOT EXISTS terminated_at TIMESTAMP;
     `);
     console.log("[STORAGE] Tables ensured.");
   } catch (err) {
@@ -348,7 +350,8 @@ async function initializeStorage() {
         availableLockers: s.availableLockers,
         bookedLockers: s.bookedLockers,
         processingLockers: s.processingLockers,
-        pricePerHour: Number(s.pricePerHour || 50)
+        pricePerHour: Number(s.pricePerHour || 50),
+        terminatedAt: s.terminatedAt
       }));
       
       stations.length = 0;
@@ -456,9 +459,10 @@ async function loadStationsFromDb() {
       booked_lockers AS "bookedLockers",
       processing_lockers AS "processingLockers",
       price_per_hour AS "pricePerHour",
-      address
+      address,
+      terminated_at AS "terminatedAt"
     FROM stations
-    ORDER BY destination_id, name
+    ORDER BY terminated_at NULLS FIRST, destination_id, name
   `);
   return result.rows.map(s => ({ ...s, pricePerHour: Number(s.pricePerHour || 50) }));
 }
@@ -593,7 +597,7 @@ async function currentStations() {
   const dbStations = await loadStationsFromDb();
   // Sync memory stations with DB stations
   stations.length = 0;
-  stations.push(...dbStations as any);
+  stations.push(...dbStations.map(s => ({ ...s, pricePerHour: Number(s.pricePerHour || 50) })) as any);
   
   return stations.map((station) => {
     const lockers = lockersForStation(station.id);
@@ -617,8 +621,8 @@ async function bootstrap() {
 
   return {
     destinations,
-    stations: await currentStations(),
-    lockers: stations.flatMap((station) => lockersForStation(station.id)),
+    stations: (await currentStations()).filter(s => !s.terminatedAt),
+    lockers: (await currentStations()).filter(s => !s.terminatedAt).flatMap((station) => lockersForStation(station.id)),
     defaultCredentials: [
       "User demo: phone 01710000000, password user123",
       "Admin demo: admin@smarttourist.bd, password admin123",
@@ -1797,45 +1801,54 @@ router.patch("/smart-tourist/stations/:stationId/price", asyncRoute(async (req, 
 
 router.delete("/smart-tourist/admin/stations/:stationId", asyncRoute(async (req, res) => {
   const { stationId } = req.params;
-  
   const stationIndex = stations.findIndex(s => s.id === stationId);
   if (stationIndex < 0) throw new Error("Station not found.");
+  
   const station = stations[stationIndex];
+  if (station.terminatedAt) throw new Error("Station is already terminated.");
 
-  // Check active bookings
   const activeBookings = bookings.filter(b => b.stationId === stationId && publicStatuses.has(b.status));
   if (activeBookings.length > 0) {
-    throw new Error(`Cannot delete: ${activeBookings.length} active booking(s) exist at this terminal.`);
+    throw new Error(`Cannot terminate: ${activeBookings.length} active booking(s) exist at this terminal.`);
   }
 
-  const receptionistIndex = receptionists.findIndex(r => r.stationId === stationId);
-  if (receptionistIndex < 0) throw new Error("Receptionist not found.");
-  const receptionist = receptionists[receptionistIndex];
-
-  // Delete from DB
-  await pool.query(`DELETE FROM lockers WHERE station_id = $1`, [stationId]);
-  await pool.query(`DELETE FROM smart_tourist_receptionists WHERE id = $1`, [receptionist.id]);
-  await pool.query(`DELETE FROM stations WHERE id = $1`, [stationId]);
-
-  // Update Memory
-  stations.splice(stationIndex, 1);
-  receptionists.splice(receptionistIndex, 1);
-  for (let i = lockers.length - 1; i >= 0; i--) {
-    if (lockers[i].stationId === stationId) lockers.splice(i, 1);
-  }
-
-  // Audit
-  const auditState = {
-    name: receptionist.name,
-    email: receptionist.email,
-    phone: receptionist.phone || "N/A",
-    address: station.address
-  };
-  addAudit("admin", "Admin", "TERMINAL_DELETED", "receptionist", receptionist.id, auditState, {}, stationId);
+  const now = new Date().toISOString();
   
-  notifyUpdate("STATION_DELETED", { stationId });
+  // Soft delete from DB
+  await pool.query(`UPDATE stations SET terminated_at = $1 WHERE id = $2`, [now, stationId]);
+  
+  // Update in-memory
+  station.terminatedAt = now;
+  
+  // Log the termination in Audit Log
+  addAudit("admin", "Admin", "TERMINAL_TERMINATED", "station", stationId, 
+    { name: station.name, status: "live" }, 
+    { name: station.name, status: "terminated", terminatedAt: now }, 
+    stationId
+  );
+  
+  notifyUpdate("STATION_TERMINATED", { stationId, terminatedAt: now });
+  res.json({ message: "Terminal terminated successfully (Soft-Delete)" });
+}));
 
-  res.json({ message: "Terminal deleted successfully" });
+router.get("/smart-tourist/admin/station-audit", asyncRoute(async (req, res) => {
+  res.json(await currentStations());
+}));
+
+router.get("/smart-tourist/admin/forensics/locker/:stationId/:lockerNumber", asyncRoute(async (req, res) => {
+  const { stationId, lockerNumber } = req.params;
+  const num = parseInt(lockerNumber);
+
+  const lockerBookings = bookings.filter(b => b.stationId === stationId && b.lockerNumber === num);
+  const lockerPayments = payments.filter(p => p.stationId === stationId && lockerBookings.some(b => b.id === p.bookingId));
+  const priceAudits = auditLogs.filter(log => log.stationId === stationId && (log.actionType === "STATION_PRICE_UPDATED" || log.actionType === "STATION_PRICE_SET"));
+
+  res.json({
+    bookings: lockerBookings,
+    payments: lockerPayments,
+    priceHistory: priceAudits,
+    lockerInfo: lockers.find(l => l.stationId === stationId && l.number === num) || { stationId, number: num, status: "unknown" }
+  });
 }));
 
 router.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
