@@ -499,6 +499,19 @@ export default function AdminDashboard() {
     return action.replace(/_/g, ' ').toUpperCase();
   };
 
+  const getPaymentActionNarrative = (action: string, role: string) => {
+    const act = action.toLowerCase();
+    const r = role === 'receptionist' ? 'Receptionist' : (role === 'user' ? 'Traveler' : 'System');
+    
+    if (act.includes('refund')) return `Refund Issued by ${r}`;
+    if (act.includes('penalty')) return `Penalty Charged by ${r}`;
+    if (act.includes('settlement')) return `Settlement by ${r}`;
+    if (act.includes('payment')) return `Payment by ${r}`;
+    if (act.includes('due')) return `Due Payment by ${r}`;
+    
+    return `${action.replace(/_/g, ' ')} by ${r}`;
+  };
+
   const renderCleanState = (state: string, isPrevious: boolean = false) => {
     const value = state?.toString()?.trim();
     if (!value || value.toLowerCase() === 'none') {
@@ -528,8 +541,8 @@ export default function AdminDashboard() {
 
   const renderPaymentState = (state: string, isPrevious: boolean = false) => {
     const value = state?.toString()?.trim();
-    if (!value || value.toLowerCase() === 'none') {
-      return isPrevious ? <span className="text-muted-foreground/40 font-bold">—</span> : <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
+    if (!value || value.toLowerCase() === 'none' || value === '{}') {
+      return <Badge variant="outline" className="opacity-40 italic">Initial</Badge>;
     }
     
     try {
@@ -1967,7 +1980,8 @@ export default function AdminDashboard() {
                           <TableRow key={log.id}>
                             <TableCell className="text-xs whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="capitalize text-[10px]">{log.actionType?.replace(/_/g, ' ')}</Badge>
+                              <div className="font-bold text-xs text-primary">{getPaymentActionNarrative(log.actionType, log.actorRole)}</div>
+                              <div className="text-[10px] text-muted-foreground mt-1 font-medium">By {log.actorName}</div>
                             </TableCell>
                             <TableCell>
                               <div className="space-y-0.5 text-[11px]">
