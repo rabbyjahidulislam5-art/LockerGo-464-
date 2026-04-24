@@ -1950,7 +1950,7 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {filteredPaymentAudit.map(log => {
-                        let userName = "", userPhone = "", userEmail = "", userAddress = "", lockerNumber = "", stationName = "", amount = 0;
+                        let userName = "", userPhone = "", userEmail = "", userAddress = "", lockerNumber = "", stationName = "", amount = 0, chronologicalPrevValue = "";
                         try {
                           const parseSafe = (val: string) => {
                             if (!val || val === "none") return {};
@@ -1981,7 +1981,7 @@ export default function AdminDashboard() {
                             if (station) stationName = station.stationName;
                           }
 
-                          const chronologicalPrevValue = (log as any).chronologicalPrevValue || log.previousValue;
+                          chronologicalPrevValue = (log as any).chronologicalPrevValue || log.previousValue;
                           
                         } catch (e) {
                           console.error("Error parsing audit log:", e);
