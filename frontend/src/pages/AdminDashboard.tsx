@@ -864,7 +864,7 @@ export default function AdminDashboard() {
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Staff</p>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <p className="text-sm font-black">{dashboard.receptionists.length} Terminals</p>
+                  <p className="text-sm font-black">{dashboard.receptionists.length} Terminals (Active Only)</p>
                 </div>
               </div>
             </div>
@@ -1196,7 +1196,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <LayoutDashboard className="h-5 w-5 text-primary" />
-                  Station Receptionists ({dashboard.receptionists.length})
+                  Live Station Staff ({dashboard.receptionists.length})
                 </CardTitle>
                 <Dialog open={isAddTerminalOpen} onOpenChange={setIsAddTerminalOpen}>
                   <DialogTrigger asChild>
@@ -2758,7 +2758,7 @@ export default function AdminDashboard() {
                     <section className="space-y-6">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-1 bg-primary rounded-full" />
-                        <h3 className="text-xl font-black tracking-tight uppercase">Booking Timeline</h3>
+                        <h3 className="text-xl font-black tracking-tight uppercase">Locker Booking Timeline (Audit)</h3>
                       </div>
                       <div className="space-y-4">
                         {forensicData.bookings.length === 0 ? (

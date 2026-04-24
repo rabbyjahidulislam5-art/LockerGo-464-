@@ -832,11 +832,19 @@ function adminDashboard() {
     if (i < 7) pulse.week.push(entry);
   }
 
+  const activeStations = stations.filter(s => !s.terminatedAt);
+  const activeReceptionists = receptionists.filter(r => {
+    // Robust check: find station in the full list and ensure it's not terminated
+    const s = stations.find(station => station.id === r.stationId);
+    if (!s) return false; // If station doesn't exist, don't show receptionist
+    return !s.terminatedAt;
+  });
+
   return {
     metrics: [
       { label: "Destinations", value: destinations.length, note: "Bangladesh tourist zones" },
-      { label: "Stations", value: stations.length, note: "5 stations per destination" },
-      { label: "Total lockers", value: stations.length * 100, note: "100 lockers per station" },
+      { label: "Stations", value: activeStations.length, note: "Active terminals currently online" },
+      { label: "Total lockers", value: activeStations.reduce((sum, s) => sum + (s.totalLockers || 100), 0), note: "Lockers in active terminals" },
       { label: "Total revenue", value: payments.reduce((sum, item) => {
           if (item.type === "refund" || item.type === "refund_40_penalty" || item.type === "refund_80_penalty") {
             return sum - item.amount;
@@ -851,10 +859,11 @@ function adminDashboard() {
     ],
     bookings: bookings.map(enrichBooking),
     users,
-    receptionists,
+    receptionists: activeReceptionists,
     payments: payments.map(enrichPayment),
     auditLogs,
     pulse,
+    _sync: Date.now(), // Force refresh identifier
   };
 }
 
