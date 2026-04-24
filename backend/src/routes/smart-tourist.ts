@@ -1763,6 +1763,38 @@ router.post("/smart-tourist/admin/stations", asyncRoute(async (req, res) => {
   res.json({ message: "Terminal created successfully", station: newStation, receptionist: newReceptionist });
 }));
 
+router.patch("/smart-tourist/stations/:stationId/price", asyncRoute(async (req, res) => {
+  const { stationId } = req.params;
+  const { pricePerHour } = req.body;
+
+  if (pricePerHour === undefined || isNaN(Number(pricePerHour))) {
+    throw new Error("Invalid pricePerHour value.");
+  }
+
+  const station = stations.find(s => s.id === stationId);
+  if (!station) throw new Error("Station not found.");
+
+  const oldPrice = station.pricePerHour || 50;
+  const newPrice = Number(pricePerHour);
+
+  // Update DB
+  await pool.query(`UPDATE stations SET price_per_hour = $1 WHERE id = $2`, [newPrice, stationId]);
+
+  // Update Memory
+  station.pricePerHour = newPrice;
+
+  // Audit
+  addAudit("admin", "Admin", "STATION_PRICE_UPDATED", "station", stationId, 
+    { pricePerHour: oldPrice }, 
+    { pricePerHour: newPrice }, 
+    stationId
+  );
+
+  notifyUpdate("STATION_PRICE_UPDATED", { stationId, pricePerHour: newPrice });
+
+  res.json({ message: "Station price updated successfully", station });
+}));
+
 router.delete("/smart-tourist/admin/stations/:stationId", asyncRoute(async (req, res) => {
   const { stationId } = req.params;
   
