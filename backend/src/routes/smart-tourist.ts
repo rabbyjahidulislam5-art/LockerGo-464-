@@ -144,6 +144,7 @@ type Booking = {
   refundAmount: number;
   penaltyPercent: number;
   dueAmount: number;
+  pricePerHour: number;
   createdAt: string;
 };
 
@@ -238,9 +239,9 @@ function formatMonthLocal(isoString: string): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
 }
-const getAmountFor = (stationId: string, hours: number) => {
-  const station = stations.find(s => s.id === stationId);
-  const rate = station?.pricePerHour ?? 50;
+const getAmountFor = (stationId: string, hours: number, customRate?: number) => {
+  const station = getStationById(stationId);
+  const rate = customRate ?? station?.pricePerHour ?? 50;
   return hours * rate;
 };
 const publicStatuses = new Set(["pending", "key_requested", "active", "return_requested", "overdue_due"]);
@@ -293,7 +294,7 @@ function bookingEmailLines(booking: Booking, heading: string) {
     `Check-in: ${new Date(booking.checkInTime).toLocaleString()}`,
     `Check-out: ${new Date(booking.checkOutTime).toLocaleString()}`,
     `Duration: ${booking.durationHours} hour(s)`,
-    `Total Cost: ৳${booking.amount}`,
+    `Total Cost: ৳${booking.paidAmount + booking.dueAmount}`,
   ];
 }
 
@@ -657,7 +658,7 @@ async function userDashboard(userId: string) {
       const extraHours = Math.ceil(overtimeMs / (60 * 60 * 1000));
       if (extraHours > 0) {
         b.status = "overdue_due";
-        b.dueAmount = getAmountFor(b.stationId, extraHours);
+        b.dueAmount = getAmountFor(b.stationId, extraHours, b.pricePerHour);
         void saveRow("bookings", b.id, b);
       }
     }
@@ -672,7 +673,7 @@ async function userDashboard(userId: string) {
       ...b, 
       stationName: station?.name || b.stationName, // Fallback to saved name if station not found
       userPhone: user.phone,
-      totalAmount: b.amount + b.dueAmount // Ensure total amount is available
+      totalAmount: b.paidAmount + b.dueAmount // Ensure total amount is available
     };
   };
 
@@ -728,7 +729,7 @@ async function receptionistDashboard(receptionistId: string) {
       stationName: station.name, // Force correct name for receptionist view
       userPhone: user?.phone || "N/A",
       userName: user?.name || b.userName,
-      totalAmount: b.amount + b.dueAmount // Total amount is principal + dues
+      totalAmount: b.paidAmount + b.dueAmount // Total amount is principal + dues
     };
   };
 
@@ -887,6 +888,7 @@ async function createConfirmedBooking(body: BookingDraft) {
     refundAmount: 0,
     penaltyPercent: 0,
     dueAmount: 0,
+    pricePerHour: station.pricePerHour || 50,
     createdAt: nowIso(),
   };
   const payment = { id: `payment-${nextId++}`, bookingId: booking.id, userId: user.id, stationId: station.id, type: "booking_payment" as const, amount: booking.paidAmount, reason: "Online locker booking payment", createdAt: nowIso() };
@@ -1331,7 +1333,7 @@ router.post("/smart-tourist/bookings/:bookingId/extend", asyncRoute(async (req, 
   const previous = { ...booking };
   booking.durationHours += body.extraHours;
   booking.checkOutTime = new Date(new Date(booking.checkOutTime).getTime() + body.extraHours * 60 * 60 * 1000).toISOString();
-  booking.dueAmount += getAmountFor(booking.stationId, body.extraHours);
+  booking.dueAmount += getAmountFor(booking.stationId, body.extraHours, booking.pricePerHour);
   await saveRow("bookings", booking.id, booking);
   
   const user = users.find(u => u.id === booking.userId) || { name: booking.userName };
@@ -1345,7 +1347,7 @@ router.post("/smart-tourist/bookings/:bookingId/extend", asyncRoute(async (req, 
   const audit = addAudit("user", booking.userName, "booking_extended", "booking", booking.id, previous, { ...booking, ...userAuditData }, booking.stationId);
   await sendActionEmail(booking.userId, "Smart Locker System booking updated", [
     `Updated time: ${new Date(booking.checkOutTime).toLocaleString()}`,
-    `Updated cost: ৳${booking.amount + booking.dueAmount}`,
+    `Updated cost: ৳${booking.paidAmount + booking.dueAmount}`,
     `Update timestamp: ${new Date().toLocaleString()}`,
     `Station Name: ${booking.stationName}`,
     `Locker Number: ${booking.lockerNumber}`,
@@ -1392,7 +1394,7 @@ router.post("/smart-tourist/bookings/:bookingId/return-key", asyncRoute(async (r
   if (now > checkOut) {
     const overtimeMs = now - checkOut;
     const extraHours = Math.ceil(overtimeMs / (60 * 60 * 1000));
-    booking.dueAmount = getAmountFor(booking.stationId, extraHours);
+    booking.dueAmount = getAmountFor(booking.stationId, extraHours, booking.pricePerHour);
     booking.status = "overdue_due";
     await saveRow("bookings", booking.id, booking);
     
