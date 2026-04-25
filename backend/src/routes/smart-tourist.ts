@@ -1133,9 +1133,15 @@ router.get("/smart-tourist/admin/user-audit", asyncRoute(async (req, res) => {
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
   const enrichedUsers = users.map(u => {
-    const joinedDate = new Date(u.createdAt || Date.now());
+    let createdAt = u.createdAt;
+    if (!createdAt) {
+      const regLog = auditLogs.find(a => a.entityId === u.id && a.actionType === "registration");
+      createdAt = regLog ? regLog.createdAt : new Date("2026-04-17T10:00:00Z").toISOString();
+    }
+    const joinedDate = new Date(createdAt);
     return {
       ...u,
+      createdAt,
       isNew: joinedDate > oneMonthAgo,
       isDeleted: !!(u as any).deletedAt
     };
