@@ -3533,6 +3533,8 @@ function AdminReviewsPanel() {
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState<string | null>(null);
 
 
 
@@ -3558,11 +3560,15 @@ function AdminReviewsPanel() {
   useRealtime(fetchReviews);
 
   // ── Delete ──────────────────────────────────────────────
-  const handleDelete = async (id: string) => {
-    if (!confirm("Permanently delete this review?")) return;
-    setDeleting(id);
+  const handleDelete = (id: string) => {
+    setReviewToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+  const confirmDelete = async () => {
+    if (!reviewToDelete) return;
+    setDeleting(reviewToDelete);
     try {
-      const res = await fetch(`/api/smart-tourist/reviews/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/smart-tourist/reviews/${reviewToDelete}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       toast({ title: "Review Deleted", description: "Review removed successfully." });
       await fetchReviews();
@@ -3570,6 +3576,8 @@ function AdminReviewsPanel() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setDeleting(null);
+      setReviewToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -3691,6 +3699,37 @@ function AdminReviewsPanel() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="rounded-[2rem] border-white/20 glass-card max-w-md p-8">
+          <DialogHeader className="space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-destructive/10 flex items-center justify-center mx-auto mb-2 border border-destructive/20">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <DialogTitle className="text-2xl font-black tracking-tight text-center">Delete Review?</DialogTitle>
+            <DialogDescription className="text-center font-medium text-muted-foreground">
+              Are you sure you want to permanently delete this traveler review? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-4 mt-8">
+            <Button 
+              variant="outline" 
+              className="flex-1 h-14 rounded-2xl font-black text-sm uppercase tracking-widest border-white/10 hover:bg-white/5 transition-all"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              className="flex-1 h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-destructive/20"
+              onClick={confirmDelete}
+              disabled={deleting !== null}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
