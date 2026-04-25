@@ -109,6 +109,7 @@ export default function AdminDashboard() {
   }, []);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [activeBookingSubTab, setActiveBookingSubTab] = useState<"active" | "history">("active");
   const [activePaymentTab, setActivePaymentTab] = useState<string>("all_transactions");
   const [activeAuditTab, setActiveAuditTab] = useState<"staff" | "booking" | "payment" | "review">("staff");
@@ -870,6 +871,7 @@ export default function AdminDashboard() {
                   key={link.id}
                   onClick={() => { 
                     if (isActive) {
+                      setRefreshKey(prev => prev + 1);
                       // Reset filters and data for the current tab
                       if (link.id === "station-audit") {
                         setStationAuditSearch("");
@@ -1044,7 +1046,7 @@ export default function AdminDashboard() {
 
           <AnimatePresence mode="wait">
             {activeTab === "overview" && (
-              <motion.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-16">
+              <motion.div key={`overview-${refreshKey}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="space-y-16">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                   {stats.map((stat, i) => (
                     <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}>
@@ -1153,7 +1155,7 @@ export default function AdminDashboard() {
             )}
 
             {activeTab === "bookings" && (
-              <motion.div key="bookings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
+              <motion.div key={`bookings-${refreshKey}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="space-y-12">
                 <div className="flex gap-4 p-2 glass-card w-fit rounded-3xl border-white/40">
                   <Button variant={activeBookingSubTab === "active" ? "default" : "ghost"} onClick={() => setActiveBookingSubTab("active")} className="rounded-2xl font-black text-xs uppercase px-8">Active Operations</Button>
                   <Button variant={activeBookingSubTab === "history" ? "default" : "ghost"} onClick={() => setActiveBookingSubTab("history")} className="rounded-2xl font-black text-xs uppercase px-8">Booking History</Button>
@@ -1326,7 +1328,7 @@ export default function AdminDashboard() {
 
         {activeTab === "users" && (
           <motion.div 
-            key="users"
+            key={`users-${refreshKey}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -1578,7 +1580,7 @@ export default function AdminDashboard() {
 
         {activeTab === "payments" && (
           <motion.div 
-            key="payments"
+            key={`payments-${refreshKey}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -1750,7 +1752,7 @@ export default function AdminDashboard() {
 
         {activeTab === "pricing" && (
           <motion.div 
-            key="pricing"
+            key={`pricing-${refreshKey}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -1891,7 +1893,7 @@ export default function AdminDashboard() {
 
         {activeTab === "audit" && (
           <motion.div 
-            key="audit"
+            key={`audit-${refreshKey}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -2529,13 +2531,13 @@ export default function AdminDashboard() {
         
         {/* Reviews Tab */}
         {activeTab === "reviews" && (
-          <motion.div key="reviews" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+          <motion.div key={`reviews-${refreshKey}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
             <AdminReviewsPanel />
           </motion.div>
         )}
 
         {activeTab === "reports" && (
-          <motion.div key="reports" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
+          <motion.div key={`reports-${refreshKey}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="space-y-8">
             <div>
               <h2 className="text-3xl font-black tracking-tighter mb-1">Report Generator</h2>
               <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Generate professional monthly PDF reports</p>
@@ -2681,7 +2683,7 @@ export default function AdminDashboard() {
 
 
             {activeTab === "station-audit" && (
-              <motion.div key="station-audit" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+              <motion.div key={`station-audit-${refreshKey}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="space-y-12">
                 {/* Search and Filters */}
                 <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
                   <div className="flex-1 w-full max-w-2xl space-y-2">
@@ -2872,7 +2874,7 @@ export default function AdminDashboard() {
               </motion.div>
             )}
             {activeTab === "user-audit" && (
-              <motion.div key="user-audit" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+              <motion.div key={`user-audit-${refreshKey}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="space-y-12">
                 {/* Search and Filters */}
                 <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
                   <div className="flex-1 w-full max-w-2xl space-y-2">
