@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, startTransition } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -94,9 +94,14 @@ export default function UserDashboard() {
     query: { 
       enabled: role === "user" && !!userId, 
       queryKey: getGetSmartTouristUserDashboardQueryKey(userId || ""),
-      refetchInterval: 2000
+      refetchInterval: 5000
     }
   });
+
+  const modalLockers = useMemo(() => {
+    if (!bookingStation || !bootstrapData?.lockers) return [];
+    return bootstrapData.lockers.filter((locker: any) => locker.stationId === bookingStation.id);
+  }, [bookingStation, bootstrapData?.lockers]);
 
   const filteredStations = useMemo(() => {
     if (!bootstrapData) return [];
@@ -206,7 +211,11 @@ export default function UserDashboard() {
                   station={station}
                   lockers={bootstrapData.lockers.filter((locker: any) => locker.stationId === station.id)}
                   destinationName={bootstrapData.destinations.find((d: any) => d.id === station.destinationId)?.name || ""}
-                  onBook={() => setBookingStation(station)}
+                  onBook={() => {
+                    startTransition(() => {
+                      setBookingStation(station);
+                    });
+                  }}
                 />
               ))}
               {filteredStations.length === 0 && (
@@ -387,9 +396,15 @@ export default function UserDashboard() {
 
       <LockerBookingModal
         station={bookingStation}
-        lockers={bookingStation ? bootstrapData.lockers.filter((locker: any) => locker.stationId === bookingStation.id) : []}
+        lockers={modalLockers}
         open={!!bookingStation}
-        onOpenChange={(open) => !open && setBookingStation(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            startTransition(() => {
+              setBookingStation(null);
+            });
+          }
+        }}
         userId={userId}
         onSuccess={() => {
           queryClient.invalidateQueries();

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, startTransition } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -96,7 +96,9 @@ export default function AdminDashboard() {
     const url = new URL(window.location.href);
     url.searchParams.set("tab", tab);
     window.history.pushState({}, "", url.toString());
-    setActiveTabState(tab);
+    startTransition(() => {
+      setActiveTabState(tab);
+    });
   };
 
   useEffect(() => {
@@ -361,7 +363,7 @@ export default function AdminDashboard() {
 
   const { data: dashboard, isLoading: dashLoading } = useGetSmartTouristAdminDashboard({
     query: {
-      refetchInterval: 3000,
+      refetchInterval: 5000,
     }
   });
   

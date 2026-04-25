@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { 
@@ -58,7 +58,9 @@ export default function ReceptionistDashboard() {
     const url = new URL(window.location.href);
     url.searchParams.set("tab", tab);
     window.history.pushState({}, "", url.toString());
-    setActiveTabState(tab);
+    startTransition(() => {
+      setActiveTabState(tab);
+    });
   };
 
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function ReceptionistDashboard() {
     query: { 
       enabled: role === "receptionist" && !!receptionistId, 
       queryKey: getGetSmartTouristReceptionistDashboardQueryKey(receptionistId || ""),
-      refetchInterval: 2000 
+      refetchInterval: 5000 
     }
   });
 
