@@ -870,16 +870,50 @@ export default function AdminDashboard() {
                   key={link.id}
                   onClick={() => { 
                     if (isActive) {
-                      if (link.id === "station-audit") fetchStationAuditList();
-                      else if (link.id === "user-audit") fetchUserAuditList();
-                      else if (link.id === "reviews") queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
-                      else if (link.id === "overview") queryClient.invalidateQueries(getGetSmartTouristAdminDashboardQueryKey());
-                      
-                      toast({
-                        title: "Refreshing Data",
-                        description: `Updating ${link.label} records...`,
-                        duration: 2000,
-                      });
+                      // Reset filters and data for the current tab
+                      if (link.id === "station-audit") {
+                        setStationAuditSearch("");
+                        setStationAuditFilter("all");
+                        setSelectedStationAudit(null);
+                        setSelectedLockerForensic(null);
+                        setIsLockerForensicOpen(false);
+                        setForensicMonthFilter("");
+                        setForensicDateFilter("");
+                        fetchStationAuditList();
+                      } else if (link.id === "user-audit") {
+                        setUserAuditSearch("");
+                        setUserAuditFilter("all");
+                        setUserAuditCategory("all");
+                        setSelectedUserAudit(null);
+                        setIsUserForensicModalOpen(false);
+                        setUserForensicMonthFilter("");
+                        setUserForensicDateFilter("");
+                        setUserForensicActionFilter("all");
+                        fetchUserAuditList();
+                      } else if (link.id === "reviews") {
+                        setReviewDayFilter("");
+                        setReviewMonthFilter("");
+                        queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+                      } else if (link.id === "overview") {
+                        queryClient.invalidateQueries(getGetSmartTouristAdminDashboardQueryKey());
+                      } else if (link.id === "bookings") {
+                        setBookingDayFilter("");
+                        setBookingMonthFilter("");
+                        setBookingStationFilter("all");
+                        setBookingActorRoleFilter("all");
+                        setActiveBookingSubTab("active");
+                      } else if (link.id === "payments") {
+                        setPaymentPhoneFilter("");
+                        setPaymentFilterType("all");
+                        setPaymentFilterValue("");
+                        setPaymentStationFilter("all");
+                        setActivePaymentTab("all_transactions");
+                      } else if (link.id === "users") {
+                        setStaffNameFilter("");
+                        setStaffRoleFilter("all");
+                      } else if (link.id === "pricing") {
+                        setPricingSearch("");
+                      }
                     } else {
                       setActiveTab(link.id); 
                     }

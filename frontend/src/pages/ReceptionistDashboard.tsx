@@ -298,12 +298,23 @@ export default function ReceptionistDashboard() {
                   key={link.id}
                   onClick={() => { 
                     if (isActive) {
+                      // Reset filters for the current tab
+                      if (link.id === "lockers") {
+                        setLockerStatusFilter("all");
+                      } else if (link.id === "active") {
+                        setActivePhoneFilter("");
+                      } else if (link.id === "history") {
+                        setHistoryFilterType("all");
+                        setHistoryFilterValue("");
+                        setHistoryPhoneFilter("");
+                      } else if (link.id === "payments") {
+                        setPaymentFilterType("all");
+                        setPaymentFilterValue("");
+                        setPaymentPhoneFilter("");
+                        setActivePaymentTab("all_transactions");
+                      }
+
                       queryClient.invalidateQueries({ queryKey: getGetSmartTouristReceptionistDashboardQueryKey(receptionistId || "") });
-                      toast({
-                        title: "Refreshing Data",
-                        description: `Updating ${link.label} records...`,
-                        duration: 2000,
-                      });
                     } else {
                       setActiveTab(link.id); 
                     }

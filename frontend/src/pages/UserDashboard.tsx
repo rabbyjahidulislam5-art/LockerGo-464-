@@ -257,12 +257,13 @@ export default function UserDashboard() {
                   key={link.id}
                   onClick={() => { 
                     if (isActive) {
+                      // Reset filters and data for the current tab
+                      if (link.id === "main") {
+                        setSelectedDestination("all");
+                        setSearchQuery("");
+                      }
+                      
                       queryClient.invalidateQueries({ queryKey: getGetSmartTouristUserDashboardQueryKey(userId || "") });
-                      toast({
-                        title: "Refreshing Data",
-                        description: `Updating ${link.label} metrics...`,
-                        duration: 2000,
-                      });
                     } else {
                       setActiveTab(link.id); 
                     }
