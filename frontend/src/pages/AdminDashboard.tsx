@@ -905,17 +905,68 @@ export default function AdminDashboard() {
                         setBookingStationFilter("all");
                         setBookingActorRoleFilter("all");
                         setActiveBookingSubTab("active");
+                        setActiveFilterType("all");
+                        setActiveFilterValue("");
+                        setHistoryFilterType("all");
+                        setHistoryFilterValue("");
+                        setHistoryStatusFilter("all");
+                        setHistoryStationFilter("all");
+                        setActivePhoneFilter("");
+                        setHistoryPhoneFilter("");
+                        setBookingLockerIdFilter("");
+                        setBookingStatusFilter("all");
+                        setBookingUserPhoneFilter("");
                       } else if (link.id === "payments") {
                         setPaymentPhoneFilter("");
                         setPaymentFilterType("all");
                         setPaymentFilterValue("");
                         setPaymentStationFilter("all");
                         setActivePaymentTab("all_transactions");
+                        setPaymentTypeFilter("all");
+                        setPaymentUserPhoneFilter("");
+                        setPaymentLockerFilter("");
+                        setPaymentDayFilter("");
+                        setPaymentMonthFilter("");
                       } else if (link.id === "users") {
                         setStaffNameFilter("");
                         setStaffRoleFilter("all");
+                        setStaffEmailFilter("");
+                        setStaffPhoneFilter("");
+                        setStaffAddressFilter("");
+                        setSelectedUser(null);
+                        setSelectedReceptionist(null);
                       } else if (link.id === "pricing") {
                         setPricingSearch("");
+                        setSelectedStationForPrice(null);
+                        setIsUpdatePriceOpen(false);
+                      } else if (link.id === "audit") {
+                        setActiveAuditTab("staff");
+                        setStaffNameFilter("");
+                        setStaffRoleFilter("all");
+                        setStaffDayFilter("");
+                        setStaffMonthFilter("");
+                        setBookingLockerIdFilter("");
+                        setBookingStatusFilter("all");
+                        setBookingUserPhoneFilter("");
+                        setPaymentTypeFilter("all");
+                        setPaymentUserPhoneFilter("");
+                        setPaymentLockerFilter("");
+                        setPaymentStationFilter("all");
+                        setPaymentDayFilter("");
+                        setPaymentMonthFilter("");
+                        setReviewDayFilter("");
+                        setReviewMonthFilter("");
+                      } else if (link.id === "reports") {
+                        setReportSections({
+                          bookings: false,
+                          penalty40: false,
+                          penalty80: false,
+                          settlement: false,
+                          due: false,
+                          staff: false,
+                        });
+                        const now = new Date();
+                        setReportMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
                       }
                     } else {
                       setActiveTab(link.id); 
