@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -60,7 +60,27 @@ export default function UserDashboard() {
   const [selectedDestination, setSelectedDestination] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [bookingStation, setBookingStation] = useState<Station | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("main");
+  const [activeTab, setActiveTabState] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") || "main";
+  });
+
+  const setActiveTab = (tab: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.pushState({}, "", url.toString());
+    setActiveTabState(tab);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setActiveTabState(params.get("tab") || "main");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -235,7 +255,19 @@ export default function UserDashboard() {
               return (
                 <button
                   key={link.id}
-                  onClick={() => { setActiveTab(link.id); setSidebarOpen(false); }}
+                  onClick={() => { 
+                    if (isActive) {
+                      queryClient.invalidateQueries({ queryKey: getGetSmartTouristUserDashboardQueryKey(userId || "") });
+                      toast({
+                        title: "Refreshing Data",
+                        description: `Updating ${link.label} metrics...`,
+                        duration: 2000,
+                      });
+                    } else {
+                      setActiveTab(link.id); 
+                    }
+                    setSidebarOpen(false); 
+                  }}
                   className={cn(
                     "w-full flex items-center gap-4 px-6 py-4 rounded-[1.5rem] transition-all duration-500 group relative",
                     isActive 

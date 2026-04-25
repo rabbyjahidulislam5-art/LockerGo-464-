@@ -87,7 +87,27 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") || "overview";
+  });
+
+  const setActiveTab = (tab: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.pushState({}, "", url.toString());
+    setActiveTabState(tab);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setActiveTabState(params.get("tab") || "overview");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeBookingSubTab, setActiveBookingSubTab] = useState<"active" | "history">("active");
   const [activePaymentTab, setActivePaymentTab] = useState<string>("all_transactions");
@@ -848,7 +868,23 @@ export default function AdminDashboard() {
               return (
                 <button
                   key={link.id}
-                  onClick={() => { setActiveTab(link.id); setSidebarOpen(false); }}
+                  onClick={() => { 
+                    if (isActive) {
+                      if (link.id === "station-audit") fetchStationAuditList();
+                      else if (link.id === "user-audit") fetchUserAuditList();
+                      else if (link.id === "reviews") queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+                      else if (link.id === "overview") queryClient.invalidateQueries(getGetSmartTouristAdminDashboardQueryKey());
+                      
+                      toast({
+                        title: "Refreshing Data",
+                        description: `Updating ${link.label} records...`,
+                        duration: 2000,
+                      });
+                    } else {
+                      setActiveTab(link.id); 
+                    }
+                    setSidebarOpen(false); 
+                  }}
                   className={cn(
                     "w-full flex items-center gap-4 px-6 py-4 rounded-[1.5rem] transition-all duration-500 group relative",
                     isActive 

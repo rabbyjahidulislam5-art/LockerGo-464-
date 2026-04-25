@@ -49,7 +49,27 @@ export default function ReceptionistDashboard() {
   const { role, receptionistId, receptionist } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("lockers");
+  const [activeTab, setActiveTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") || "lockers";
+  });
+
+  const setActiveTab = (tab: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.pushState({}, "", url.toString());
+    setActiveTabState(tab);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setActiveTabState(params.get("tab") || "lockers");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePaymentTab, setActivePaymentTab] = useState<string>("all_transactions");
 
@@ -212,6 +232,34 @@ export default function ReceptionistDashboard() {
     return <div className="p-8 text-center">Dashboard not found.</div>;
   }
 
+  if (dashboard.station?.terminatedAt) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
+        <div className="max-w-md w-full glass-card p-12 rounded-[3rem] text-center space-y-8 shadow-2xl border-white/20">
+          <div className="relative mx-auto w-24 h-24">
+            <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse" />
+            <div className="relative bg-red-500 rounded-3xl p-6 shadow-2xl">
+              <ShieldCheck className="h-12 w-12 text-white" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white uppercase">Terminal Offline</h2>
+            <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+              This terminal (<span className="font-bold text-red-500">{dashboard.station.name}</span>) has been officially terminated by the administration. All active operations are suspended.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full h-14 rounded-2xl font-black border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+            onClick={() => window.dispatchEvent(new CustomEvent("smart-tourist-logout"))}
+          >
+            <LogOut className="h-4 w-4 mr-2" /> EXIT SYSTEM
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const sidebarLinks = [
     { id: "lockers", label: "Locker Grid", icon: Box },
     { id: "queue", label: "Action Queue", icon: Clock },
@@ -248,7 +296,19 @@ export default function ReceptionistDashboard() {
               return (
                 <button
                   key={link.id}
-                  onClick={() => { setActiveTab(link.id); setSidebarOpen(false); }}
+                  onClick={() => { 
+                    if (isActive) {
+                      queryClient.invalidateQueries({ queryKey: getGetSmartTouristReceptionistDashboardQueryKey(receptionistId || "") });
+                      toast({
+                        title: "Refreshing Data",
+                        description: `Updating ${link.label} records...`,
+                        duration: 2000,
+                      });
+                    } else {
+                      setActiveTab(link.id); 
+                    }
+                    setSidebarOpen(false); 
+                  }}
                   className={cn(
                     "w-full flex items-center justify-between px-6 py-4 rounded-[1.5rem] transition-all duration-500 group relative",
                     isActive 
