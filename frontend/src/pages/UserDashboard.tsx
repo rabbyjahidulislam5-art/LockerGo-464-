@@ -82,6 +82,7 @@ export default function UserDashboard() {
   }, []);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handleReset = () => setActiveTab("main");
@@ -257,6 +258,7 @@ export default function UserDashboard() {
                   key={link.id}
                   onClick={() => { 
                     if (isActive) {
+                      setRefreshKey(prev => prev + 1);
                       // Reset filters and data for the current tab
                       if (link.id === "main") {
                         setSelectedDestination("all");
@@ -312,6 +314,7 @@ export default function UserDashboard() {
         <div className="p-4 md:p-12 max-w-[1600px] mx-auto min-h-full space-y-12">
           {activeTab === "main" && (
             <motion.div
+              key={`main-${refreshKey}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-12"
@@ -369,7 +372,7 @@ export default function UserDashboard() {
           {activeTab !== "main" && (
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeTab}
+                key={`${activeTab}-${refreshKey}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}

@@ -877,6 +877,7 @@ export default function AdminDashboard() {
                         setSelectedStationAudit(null);
                         setSelectedLockerForensic(null);
                         setIsLockerForensicOpen(false);
+                        setForensicData(null);
                         setForensicMonthFilter("");
                         setForensicDateFilter("");
                         fetchStationAuditList();
@@ -885,6 +886,8 @@ export default function AdminDashboard() {
                         setUserAuditFilter("all");
                         setUserAuditCategory("all");
                         setSelectedUserAudit(null);
+                        setUserForensicData(null);
+                        setSelectedForensicLocker(null);
                         setIsUserForensicModalOpen(false);
                         setUserForensicMonthFilter("");
                         setUserForensicDateFilter("");
@@ -2728,21 +2731,21 @@ export default function AdminDashboard() {
                             <div className="flex justify-between items-center">
                               <div>
                                 <div className="flex items-center gap-3 mb-2">
-                                  <Badge className={cn("px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-[0.2em] border-none", selectedStationAudit.terminatedAt ? "bg-red-500 text-white" : "bg-emerald-500 text-white")}>
-                                    {selectedStationAudit.terminatedAt ? "Terminal Offline" : "Terminal Online"}
+                                  <Badge className={cn("px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-[0.2em] border-none", selectedStationAudit?.terminatedAt ? "bg-red-500 text-white" : "bg-emerald-500 text-white")}>
+                                    {selectedStationAudit?.terminatedAt ? "Terminal Offline" : "Terminal Online"}
                                   </Badge>
-                                  {selectedStationAudit.terminatedAt && (
+                                  {selectedStationAudit?.terminatedAt && (
                                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-3">
-                                      Deactivated on: {formatDateTime(selectedStationAudit.terminatedAt)}
+                                      Deactivated on: {formatDateTime(selectedStationAudit?.terminatedAt)}
                                     </span>
                                   )}
                                 </div>
-                                <CardTitle className="text-4xl font-black tracking-tighter">{selectedStationAudit.name}</CardTitle>
-                                <CardDescription className="text-sm font-bold text-muted-foreground mt-2">{selectedStationAudit.address}</CardDescription>
+                                <CardTitle className="text-4xl font-black tracking-tighter">{selectedStationAudit?.name}</CardTitle>
+                                <CardDescription className="text-sm font-bold text-muted-foreground mt-2">{selectedStationAudit?.address}</CardDescription>
                               </div>
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Station ID</p>
-                                <p className="text-xl font-mono font-black text-primary">{selectedStationAudit.id.toUpperCase()}</p>
+                                <p className="text-xl font-mono font-black text-primary">{selectedStationAudit?.id?.toUpperCase()}</p>
                               </div>
                             </div>
                           </CardHeader>
@@ -2750,15 +2753,15 @@ export default function AdminDashboard() {
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                               <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10">
                                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Total Units</p>
-                                <p className="text-3xl font-black tracking-tighter">{selectedStationAudit.totalLockers}</p>
+                                <p className="text-3xl font-black tracking-tighter">{selectedStationAudit?.totalLockers}</p>
                               </div>
                               <div className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10">
                                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Current Rate</p>
-                                <p className="text-3xl font-black tracking-tighter">৳{selectedStationAudit.pricePerHour}</p>
+                                <p className="text-3xl font-black tracking-tighter">৳{selectedStationAudit?.pricePerHour}</p>
                               </div>
                               <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10">
                                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Destination</p>
-                                <p className="text-2xl font-black tracking-tighter truncate">{selectedStationAudit.destinationId}</p>
+                                <p className="text-2xl font-black tracking-tighter truncate">{selectedStationAudit?.destinationId}</p>
                               </div>
                               <div className="p-6 rounded-3xl bg-amber-500/5 border border-amber-500/10">
                                 <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Monitor Node</p>
@@ -2781,14 +2784,14 @@ export default function AdminDashboard() {
                               </div>
 
                               <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
-                                {Array.from({ length: selectedStationAudit.totalLockers }).map((_, i) => (
+                                {Array.from({ length: selectedStationAudit?.totalLockers || 0 }).map((_, i) => (
                                   <motion.button
                                     key={i}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => {
-                                      setSelectedLockerForensic({ stationId: selectedStationAudit.id, number: i + 1 });
-                                      fetchForensicData(selectedStationAudit.id, i + 1);
+                                      setSelectedLockerForensic({ stationId: selectedStationAudit?.id, number: i + 1 });
+                                      fetchForensicData(selectedStationAudit?.id || "", i + 1);
                                       setIsLockerForensicOpen(true);
                                     }}
                                     className="aspect-square rounded-2xl border border-primary/10 bg-primary/5 hover:bg-primary hover:text-white transition-all flex flex-col items-center justify-center gap-1 group shadow-sm"
@@ -2936,8 +2939,8 @@ export default function AdminDashboard() {
                                   <UserCircle className="h-12 w-12 text-white" />
                                 </div>
                                 <div>
-                                  <CardTitle className="text-4xl font-black tracking-tighter uppercase">{selectedUserAudit.name}</CardTitle>
-                                  <CardDescription className="font-bold text-primary opacity-60">Audit ID: {selectedUserAudit.id}</CardDescription>
+                                  <CardTitle className="text-4xl font-black tracking-tighter uppercase">{selectedUserAudit?.name}</CardTitle>
+                                  <CardDescription className="font-bold text-primary opacity-60">Audit ID: {selectedUserAudit?.id}</CardDescription>
                                 </div>
                               </div>
                               <Button 
@@ -2958,15 +2961,15 @@ export default function AdminDashboard() {
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="p-8 rounded-[2.5rem] bg-primary/5 space-y-2">
                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Total Bookings</p>
-                                  <p className="text-4xl font-black">{userForensicData.bookings.length}</p>
+                                  <p className="text-4xl font-black">{userForensicData?.bookings?.length || 0}</p>
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 space-y-2">
                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Total Contribution</p>
-                                  <p className="text-4xl font-black text-emerald-600">৳{userForensicData.payments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)}</p>
+                                  <p className="text-4xl font-black text-emerald-600">৳{(userForensicData?.payments || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)}</p>
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-amber-500/5 space-y-2">
                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Audit Logs</p>
-                                  <p className="text-4xl font-black text-amber-600">{userForensicData.audits.length}</p>
+                                  <p className="text-4xl font-black text-amber-600">{userForensicData?.audits?.length || 0}</p>
                                 </div>
                                 
                                 <div className="md:col-span-3">
@@ -2974,7 +2977,7 @@ export default function AdminDashboard() {
                                     <Activity className="h-4 w-4 text-primary" /> Recent Activity
                                   </h4>
                                   <div className="space-y-4">
-                                    {userForensicData.audits.slice(0, 5).map((log: any) => (
+                                    {(userForensicData?.audits || []).slice(0, 5).map((log: any) => (
                                       <div key={log.id} className="flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-slate-900 border border-border/50">
                                         <div className="flex items-center gap-4">
                                           <div className="w-2 h-2 rounded-full bg-primary" />
@@ -3035,10 +3038,10 @@ export default function AdminDashboard() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <Badge className="bg-white/20 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Identity Forensic Node</Badge>
-                      {selectedUserAudit.isDeleted && <Badge className="bg-red-500 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Deactivated Account</Badge>}
+                      {selectedUserAudit?.isDeleted && <Badge className="bg-red-500 text-white border-none font-black text-[10px] tracking-widest uppercase px-4 py-1 rounded-full">Deactivated Account</Badge>}
                     </div>
-                    <h2 className="text-6xl font-black tracking-tighter uppercase">{selectedUserAudit.name}</h2>
-                    <p className="text-white/60 font-black text-xs uppercase tracking-[0.2em]">{selectedUserAudit.phone} &bull; {selectedUserAudit.email || "NO EMAIL"}</p>
+                    <h2 className="text-6xl font-black tracking-tighter uppercase">{selectedUserAudit?.name}</h2>
+                    <p className="text-white/60 font-black text-xs uppercase tracking-[0.2em]">{selectedUserAudit?.phone} &bull; {selectedUserAudit?.email || "NO EMAIL"}</p>
                   </div>
                   <div className="text-right space-y-2">
                     <div className="flex flex-col sm:flex-row gap-3 justify-end items-center">
@@ -3091,10 +3094,10 @@ export default function AdminDashboard() {
                           <div className="h-8 w-1 bg-blue-500 rounded-full" />
                           <h3 className="text-xl font-black tracking-tight uppercase">Station Interactivity Grid</h3>
                         </div>
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{new Set(userForensicData.bookings.map((b: any) => b.stationName)).size} Terminals Utilized</p>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{new Set(userForensicData?.bookings?.map((b: any) => b.stationName) || []).size} Terminals Utilized</p>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {Array.from(new Set(userForensicData.bookings.map((b: any) => `${b.stationName}|${b.lockerNumber}`))).map((pair: any, idx) => {
+                        {Array.from(new Set(userForensicData?.bookings?.map((b: any) => `${b.stationName}|${b.lockerNumber}`) || [])).map((pair: any, idx) => {
                           const [stationName, lockerNumber] = pair.split('|');
                           const isSelected = selectedForensicLocker === pair;
                           return (
@@ -3113,7 +3116,7 @@ export default function AdminDashboard() {
                             </div>
                           );
                         })}
-                        {userForensicData.bookings.length === 0 && (
+                        {(userForensicData?.bookings?.length || 0) === 0 && (
                           <div className="col-span-full py-10 text-center rounded-3xl bg-muted/20 border-dashed border-2 border-border">
                             <p className="text-xs font-bold text-muted-foreground italic">No terminal interactions recorded.</p>
                           </div>
@@ -3128,7 +3131,7 @@ export default function AdminDashboard() {
                         <h3 className="text-xl font-black tracking-tight uppercase">Historical Booking Timeline</h3>
                       </div>
                       <div className="space-y-6 max-h-[700px] overflow-y-auto custom-scrollbar pr-4 pb-4">
-                        {userForensicData.bookings
+                        {(userForensicData?.bookings || [])
                           .filter((b: any) => {
                             if (userForensicMonthFilter && !formatMonthLocal(b.createdAt).includes(userForensicMonthFilter)) return false;
                             if (userForensicDateFilter && !formatDateLocal(b.createdAt).includes(userForensicDateFilter)) return false;
@@ -3187,11 +3190,11 @@ export default function AdminDashboard() {
                       <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         <div className="space-y-8">
                           {(() => {
-                            const filteredPayments = userForensicData.payments.filter((p: any) => {
+                            const filteredPayments = (userForensicData?.payments || []).filter((p: any) => {
                               if (userForensicMonthFilter && !formatMonthLocal(p.createdAt).includes(userForensicMonthFilter)) return false;
                               if (userForensicDateFilter && !formatDateLocal(p.createdAt).includes(userForensicDateFilter)) return false;
                               if (selectedForensicLocker) {
-                                const booking = userForensicData.bookings.find((b: any) => b.id === p.bookingId);
+                                const booking = userForensicData?.bookings?.find((b: any) => b.id === p.bookingId);
                                 if (!booking || `${booking.stationName}|${booking.lockerNumber}` !== selectedForensicLocker) return false;
                               }
                               return true;
@@ -3246,7 +3249,7 @@ export default function AdminDashboard() {
                       <div className="max-h-[500px] overflow-y-auto custom-scrollbar pr-4 pb-4">
                         <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-primary/10">
                           {(() => {
-                            const filteredLogs = userForensicData.audits.filter((log: any) => {
+                            const filteredLogs = (userForensicData?.audits || []).filter((log: any) => {
                               // Only show user/staff/session related audits here (no bookings/payments)
                               const type = log.entityType?.toLowerCase() || "";
                               if (type !== 'user' && type !== 'staff' && type !== 'session') return false;
@@ -3366,12 +3369,12 @@ export default function AdminDashboard() {
                         <h3 className="text-xl font-black tracking-tight uppercase">Booking Timeline</h3>
                       </div>
                       <div className="space-y-4">
-                        {forensicData.bookings.length === 0 ? (
+                        {(forensicData?.bookings?.length || 0) === 0 ? (
                           <div className="p-10 text-center rounded-3xl bg-muted/50 border-dashed border-2 border-border">
                             <p className="text-sm font-bold text-muted-foreground">No historical bookings found for this unit.</p>
                           </div>
                         ) : (
-                          forensicData.bookings
+                          (forensicData?.bookings || [])
                             .filter((b: any) => {
                               if (forensicMonthFilter && !formatMonthLocal(b.createdAt).includes(forensicMonthFilter)) return false;
                               if (forensicDateFilter && !formatDateLocal(b.createdAt).includes(forensicDateFilter)) return false;
@@ -3405,12 +3408,12 @@ export default function AdminDashboard() {
                         <h3 className="text-xl font-black tracking-tight uppercase">Financial Ledger</h3>
                       </div>
                       <div className="space-y-4">
-                        {forensicData.payments.length === 0 ? (
+                        {(forensicData?.payments?.length || 0) === 0 ? (
                           <div className="p-10 text-center rounded-3xl bg-muted/50 border-dashed border-2 border-border">
                             <p className="text-sm font-bold text-muted-foreground">No financial records found.</p>
                           </div>
                         ) : (
-                          forensicData.payments
+                          (forensicData?.payments || [])
                             .filter((p: any) => {
                               if (forensicMonthFilter && !formatMonthLocal(p.createdAt).includes(forensicMonthFilter)) return false;
                               if (forensicDateFilter && !formatDateLocal(p.createdAt).includes(forensicDateFilter)) return false;

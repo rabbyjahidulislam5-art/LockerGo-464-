@@ -71,6 +71,7 @@ export default function ReceptionistDashboard() {
   }, []);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [activePaymentTab, setActivePaymentTab] = useState<string>("all_transactions");
 
   // Profile fields state
@@ -298,6 +299,7 @@ export default function ReceptionistDashboard() {
                   key={link.id}
                   onClick={() => { 
                     if (isActive) {
+                      setRefreshKey(prev => prev + 1);
                       // Reset filters for the current tab
                       if (link.id === "lockers") {
                         setLockerStatusFilter("all");
@@ -401,7 +403,7 @@ export default function ReceptionistDashboard() {
             <AnimatePresence mode="wait">
             {activeTab === "lockers" && (
               <motion.div
-                key="lockers"
+                key={`lockers-${refreshKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -440,7 +442,7 @@ export default function ReceptionistDashboard() {
 
             {activeTab === "queue" && (
               <motion.div
-                key="queue"
+                key={`queue-${refreshKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -479,7 +481,7 @@ export default function ReceptionistDashboard() {
 
             {activeTab === "active" && (
               <motion.div
-                key="active"
+                key={`active-${refreshKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -544,7 +546,7 @@ export default function ReceptionistDashboard() {
 
             {activeTab === "history" && (
               <motion.div
-                key="history"
+                key={`history-${refreshKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -632,7 +634,7 @@ export default function ReceptionistDashboard() {
 
             {activeTab === "payments" && (
               <motion.div
-                key="payments"
+                key={`payments-${refreshKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -862,7 +864,7 @@ export default function ReceptionistDashboard() {
 
             {activeTab === "profile" && (
               <motion.div
-                key="profile"
+                key={`profile-${refreshKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
