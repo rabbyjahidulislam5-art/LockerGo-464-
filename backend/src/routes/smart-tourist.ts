@@ -634,6 +634,41 @@ async function bootstrap() {
   };
 }
 
+/**
+ * Syncs overdue bookings in memory.
+ * For any booking that is 'active' or 'overdue_due' and past its checkOutTime,
+ * recalculate the dueAmount based on total time elapsed.
+ * This ensures the due amount always reflects the real-world current time.
+ * Formula: (totalElapsedHours * rate) - paidAmount
+ * @param filterUserId - Optional. If provided, only syncs bookings for that user.
+ */
+function syncOverdueBookings(filterUserId?: string) {
+  const now = Date.now();
+  bookings.forEach(b => {
+    // Skip bookings not in an overdueable state
+    if (b.status !== "active" && b.status !== "overdue_due") return;
+    // If filtering by user, skip others
+    if (filterUserId && b.userId !== filterUserId) return;
+
+    const checkOutMs = new Date(b.checkOutTime).getTime();
+    if (now > checkOutMs) {
+      // Calculate total overtime hours from checkOutTime to now
+      const overtimeMs = now - checkOutMs;
+      const extraHours = Math.ceil(overtimeMs / (60 * 60 * 1000));
+      // Absolute formula: total owed = (planned + overtime) hours * rate
+      // dueAmount = total owed - what was already paid
+      const totalOwed = (b.durationHours + extraHours) * b.pricePerHour;
+      const newDueAmount = Math.max(0, totalOwed - b.paidAmount);
+
+      if (b.status !== "overdue_due" || b.dueAmount !== newDueAmount) {
+        b.status = "overdue_due";
+        b.dueAmount = newDueAmount;
+        void saveRow("bookings", b.id, b);
+      }
+    }
+  });
+}
+
 async function userDashboard(userId: string) {
   const dbStations = await loadStationsFromDb();
   stations.length = 0;
@@ -656,19 +691,8 @@ async function userDashboard(userId: string) {
     };
   }
 
-  const now = Date.now();
-  // Auto-extend overdue bookings in memory before returning
-  bookings.forEach(b => {
-    if (b.userId === user.id && b.status === "active" && now > new Date(b.checkOutTime).getTime()) {
-      const overtimeMs = now - new Date(b.checkOutTime).getTime();
-      const extraHours = Math.ceil(overtimeMs / (60 * 60 * 1000));
-      if (extraHours > 0) {
-        b.status = "overdue_due";
-        b.dueAmount = getAmountFor(b.stationId, extraHours, b.pricePerHour);
-        void saveRow("bookings", b.id, b);
-      }
-    }
-  });
+  // Sync overdue bookings for this user before returning dashboard data
+  syncOverdueBookings(userId);
 
   const relatedBookings = bookings.filter((item) => item.userId === user.id);
   const relatedPayments = payments.filter((item) => item.userId === user.id);
@@ -725,6 +749,8 @@ async function receptionistDashboard(receptionistId: string) {
     throw new Error(`Station for receptionist ${receptionistId} not found.`);
   }
   
+  // Sync overdue bookings for this station before returning dashboard data
+  syncOverdueBookings();
   const stationBookings = bookings.filter((item) => item.stationId === station.id);
   const stationPayments = payments.filter((item) => item.stationId === station.id);
   
@@ -798,6 +824,9 @@ async function adminDashboard() {
   // Ensure global stations is up to date for other functions that might use it
   stations.length = 0;
   stations.push(...dbStations as any);
+
+  // Sync overdue bookings for all stations before returning admin data
+  syncOverdueBookings();
 
   const enrichBooking = (b: Booking) => {
     const station = stations.find(s => s.id === b.stationId);
@@ -1530,7 +1559,9 @@ router.post("/smart-tourist/bookings/:bookingId/return-key", asyncRoute(async (r
   if (now > checkOut) {
     const overtimeMs = now - checkOut;
     const extraHours = Math.ceil(overtimeMs / (60 * 60 * 1000));
-    booking.dueAmount = getAmountFor(booking.stationId, extraHours, booking.pricePerHour);
+    // Absolute formula: same as syncOverdueBookings
+    const totalOwed = (booking.durationHours + extraHours) * booking.pricePerHour;
+    booking.dueAmount = Math.max(0, totalOwed - booking.paidAmount);
     booking.status = "overdue_due";
     await saveRow("bookings", booking.id, booking);
     
@@ -1543,6 +1574,7 @@ router.post("/smart-tourist/bookings/:bookingId/return-key", asyncRoute(async (r
     notifyUpdate("BOOKING_OVERDUE", booking);
     return;
   }
+
   
   booking.status = "return_requested";
   await saveRow("bookings", booking.id, booking);
